@@ -47,18 +47,18 @@ class LineWriter:
         with open(self.filename,'a') as f:
             if not self.written:
                 self.written = True
-                names = self.info.__dict__.keys() + info.__dict__.keys()
+                names = self.info.keys() + info.keys()
                 header = ",".join(names) + "\n"
                 f.write(header)
                 
-                self.init_order = self.info.__dict__.keys()
-                self.call_order = info.__dict__.keys()
+                self.init_order = self.info.keys()
+                self.call_order = info.keys()
 
-            assert list(info.__dict__.keys()) == list(self.call_order)
+            assert list(info.keys()) == list(self.call_order)
 
             #pdb.set_trace()
 
-            values = [self.info.__dict__[x] for x in self.init_order] + \
-              [info.__dict__[x] for x in self.call_order]
+            values = [self.info[x] for x in self.init_order] + \
+              [info[x] for x in self.call_order]
             line = ",".join(map(str,values)) + "\n"
             f.write(line)
