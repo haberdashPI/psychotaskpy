@@ -23,13 +23,16 @@ def sig_solve_slope(p,x,alpha):
     return log((1-p)/(p-alpha)) / -x
 
 class MLAdapter:
-    def __init__(self,start_delta,possible_slopes,possible_alphas):
+    def __init__(self,start_delta,possible_slopes,possible_alphas,slope_sigma):
         self.log_zero = -100
         self.LLs = []
         self.delta = start_delta
         for slope in possible_slopes:
             for alpha in possible_alphas:
-                self.LLs.append({'slope':slope,'alpha':alpha,'value':0})
+                prior = -log((slope_sigma * sqrt(2*pi)))  \
+                  -(slope**2 / (2*slope_sigma**2))
+                #prior = 0.0
+                self.LLs.append({'slope':slope, 'alpha': alpha, 'value': prior})
 
     def __logz(self,x):
         if x == 0: return self.log_zero
