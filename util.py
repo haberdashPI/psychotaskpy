@@ -38,27 +38,27 @@ def unique_file(filename_pattern):
     return fname
 
 class LineWriter:
-    def __init__(self,filename,info):
+    def __init__(self,filename,info,info_order):
         self.info = info
+        self.info_order = info_order
         self.filename = filename
         self.written = False
 
-    def __call__(self,info):
+    def __call__(self,info,info_order):
         with open(self.filename,'a') as f:
             if not self.written:
                 self.written = True
-                names = self.info.keys() + info.keys()
+                names = self.info_order + info_order
                 header = ",".join(names) + "\n"
                 f.write(header)
                 
-                self.init_order = self.info.keys()
-                self.call_order = info.keys()
+                self.call_info_order = info_order
 
-            assert list(info.keys()) == list(self.call_order)
+            assert set(info.keys()) == set(self.call_info_order)
 
             #pdb.set_trace()
 
-            values = [self.info[x] for x in self.init_order] + \
-              [info[x] for x in self.call_order]
+            values = [self.info[x] for x in self.info_order] + \
+              [info[x] for x in self.call_info_order]
             line = ",".join(map(str,values)) + "\n"
             f.write(line)
