@@ -161,19 +161,22 @@ def run(env,stimulus,write_line):
         env['win'].flip()
         response = responder.get_response()
 
-        line_info = {'user_response': response['value'],
+        line_info = {'delta': adapter.delta,
+                    'user_response': response['value'],
                     'correct_response': int(use_different_stimulus),
                     'rt': response['rt'],
                     'threshold': adapter.estimate(),
                     'timestamp': datetime.datetime.now().time()}
+        order = ['user_response','correct_response','rt','delta','threshold','timestamp']
         delta_names = ['delta%02d' % x for x in range(len(stimulus['intervals']))]
+        order = delta_names + order
         if use_different_stimulus:
             line_info.update(dict(zip(delta_names,deltas)))
         else:
             line_info.update(dict(zip(delta_names,
                                       np.zeros(len(stimulus['intervals'])))))
 
-        write_line(line_info)
+        write_line(line_info,order)
 
         adapter.update(response['value'],int(use_different_stimulus))
 
