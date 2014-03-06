@@ -154,7 +154,7 @@ def run(env,stimulus,write_line):
         env['win'].flip()
         stim_2.play()
 
-        delay = stim_2.getDuration()
+        delay = stim_2.getDuration() * 1.1
         wait(delay,delay)
 
         query_message.draw()
@@ -179,6 +179,7 @@ def run(env,stimulus,write_line):
         write_line(line_info,order)
 
         adapter.update(response['value'],int(use_different_stimulus))
+        if adapter.delta > 1: adapter.delta = 1
 
         if response['value'] == int(use_different_stimulus): correct_message.draw()
         else: incorrect_message.draw()
