@@ -20,13 +20,14 @@ stimulus = {'atten_dB': 10,
 
 def adapter():
     alphas = np.linspace(0,0.3,num=4)
+    midpoints = np.linspace(0.01,0.99,num=99)
+    slope_sigma = adapters.sig_solve_slope(p=0.95,delta=0.02,alpha=0.0,
+                                           midpoint=0.01)
+    slopes = np.linspace(0.01,2*slope_sigma,num=25)
 
-    slopes = (adapters.sig_solve_slope(p=0.95,x=delta,alpha=0.0) \
-          for delta in np.linspace(0.01,0.95,num=1000))
-
-    slope_sigma = adapters.sig_solve_slope(p=0.95,x=0.01,alpha=0.0)
-
-    return adapters.MLAdapter(0.95,sorted(slopes),alphas,slope_sigma)
+    return adapters.MLAdapter(start_delta=0.95,slopes=sorted(slopes),
+                              alphas=alphas,midpoints=midpoints,
+                              slope_sigma=slope_sigma)
 
 env = {'debug': False,
        'sample_rate_Hz': 44100,
@@ -35,8 +36,14 @@ env = {'debug': False,
        'feedback_delay_ms': 500}
 
 def create_window(env):
-    if env['debug']: return Window([400,400])
-    else: return Window(fullscr=True)
+    if env['debug']:
+        win = Window([400,400])
+        win.setMouseVisible(False)
+        return win
+    else:
+        win = Window(fullscr=True)
+        win.setMouseVisible(False)
+        return win
 
 def blocked_audio(sid,group,phase,start_block,num_blocks):
     env['win'] = create_window(env)
