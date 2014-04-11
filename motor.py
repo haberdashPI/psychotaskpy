@@ -5,7 +5,7 @@ from psychopy.event import getKeys, waitKeys, clearEvents
 from psychopy.core import *
 from util import tone, Info
 
-use_response_pad = True
+use_response_pad = False
 trigger_key = 2 # round center button
 
 # keyboard responder (used for debugging purposes)
@@ -69,7 +69,7 @@ class CedrusPadResponder:
         self.wait = getTime() + wait_time_ms/1000.0
         #self.dev.query_base_timer() + wait_time_ms
             
-    def collect_evets_until_end(self,block,events):
+    def collect_events_until_end(self,block,events):
         # get as many responses as we can off of the queue.
         while getTime() < (self.wait - self.short_time):
             if self.dev.response_queue_size() > 0:
@@ -112,11 +112,14 @@ class CedrusPadResponder:
 
         # only return those events that fall within the 
         # given window of time.
-        return filter(lambda e: e.time + self.prepare_time < self.wait,events)
+        return filter(lambda e: e['time'] + self.prepare_time < self.wait,events)
         
 
 def run(env,stimulus,write_line):
-    start_message = TextStim(env['win'],text='Press space bar to start a block.')
+    if use_response_pad:
+        start_message = TextStim(env['win'],text='Press center button to start a block.')
+    else:
+        start_message = TextStim(env['win'],text='Press space bar to start a block.')
     
     beep = Sound(tone(stimulus['freq_Hz'],stimulus['beep_ms'],
                       stimulus['atten_dB'],stimulus['ramp_ms'],
@@ -145,4 +148,4 @@ def run(env,stimulus,write_line):
         responder.set_end(env['continuation_ms'])
         events = responder.all_events_up_to_end(block,events)
                 
-        for event in events: write_line(event)
+        for event in events: write_line(event,['block','time'])
