@@ -84,10 +84,6 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
         info_order = ['sid','group','phase','block']
 
         freq = stimulus['conditions'][condition]['frequency_Hz']
-        env['adapter'] = adapters.Stepper(start=0.1*freq,
-                                          bigstep=2,littlestep=np.sqrt(2),
-                                          down=3,up=1,mult=True)
-        
         wait(3.0)
 
         frequency.examples(env,stimulus)
@@ -96,6 +92,10 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
             info['block'] = i
             dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
                             time.strftime("%Y_%m_%d_") + phase + "_%02d.dat")
+
+            env['adapter'] = adapters.Stepper(start=0.1*freq,
+                                            bigstep=2,littlestep=np.sqrt(2),
+                                            down=3,up=1,mult=True)
             
             frequency.run(env,stimulus,LineWriter(dfile,info,info_order))
     finally:
