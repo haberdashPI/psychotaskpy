@@ -166,7 +166,8 @@ def run(env,stimulus,write_line):
                     'correct_response': int(use_different_stimulus),
                     'rt': response['rt'],
                     'threshold': adapter.estimate(),
-                    'timestamp': datetime.datetime.now().time()}
+                    'timestamp': datetime.datetime.now()}
+
         order = ['user_response','correct_response','rt','delta','threshold','timestamp']
         delta_names = ['delta%02d' % x for x in range(len(stimulus['intervals']))]
         order = delta_names + order
