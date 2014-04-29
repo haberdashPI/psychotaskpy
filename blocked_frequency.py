@@ -88,7 +88,6 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
                                           bigstep=2,littlestep=np.sqrt(2),
                                           down=3,up=1,mult=True)
         
-        TextStim(env['win'],text='Tapping Task')
         wait(3.0)
 
         frequency.examples(env,stimulus)
