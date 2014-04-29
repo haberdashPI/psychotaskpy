@@ -11,6 +11,95 @@ class ConstantAdapter:
         self.delta = self.delta_seq[self.index]
         self.index = self.index + 1
 
+################################################################################
+# Stepping adapter: classic adaptive threshold estimation ala Levitt 1971
+
+class Stepper:
+    def __init__(self,start,bigstep,littlestep,down,up,big_reverse=3,
+                 drop_reversals=3,min_reversals=7,mult=False):
+        
+        self.down = down
+        self.up = up
+        self.bigstep = bigstep
+        self.step = littlestep
+        self.big_reverse = big_reverse
+        self.drop_reversals = drop_reversals
+        self.min_reversals = min_reversals
+        self.mult = mult
+
+        self.num_correct = 0
+        self.num_incorrect = 0
+        self.reversals = []
+        self.last_direction = 0
+
+        self.delta = start
+
+    def update_reversals(self,direction):
+        if self.last_direction and direction != self.last_direction:
+            self.reversals.append(self.delta)
+
+        self.last_direction = direction
+                 
+    def update(self,user_response,correct_response):
+        if user_response == correct_response:
+            self.num_correct = self.num_correct + 1
+            self.num_incorrect = 0
+
+            if self.num_correct >= self.down:
+                self.num_correct = 0
+                self.update_reversals(-1)
+
+                if len(self.reversals) < self.big_reverse:
+                    if self.mult:
+                        new_delta = self.delta / self.bigstep
+                    else:
+                        new_delta = self.delta - self.bigstep
+                else:
+                    if self.mult:
+                        new_delta = self.delta / self.step
+                    else:
+                        new_delta = self.delta - self.step
+
+            else:
+                new_delta = self.delta
+
+            self.delta = new_delta
+
+        else:
+            self.num_incorrect = self.num_incorrect + 1
+            self.num_correct = 0
+
+            if self.num_incorrect >= self.up:
+                self.num_incorrect = 0
+                self.update_reversals(1)
+
+                if len(self.reversals) < self.big_reverse:
+                    if self.mult:
+                        new_delta = self.delta * self.bigstep
+                    else:
+                        new_delta = self.delta + self.bigstep
+                else:
+                    if self.mult:
+                        new_delta = self.delta * self.step
+                    else:
+                        new_delta = self.delta + self.step
+            else:
+                new_delta = self.delta
+
+            self.delta = new_delta
+
+    def estimates(self):
+        if len(self.reversals) < self.min_reversals:
+            return []
+        else:
+            if len(self.reversals) % 2 == 0:
+                return self.reversals[(self.drop_reversals+1):]
+            else:
+                return self.reversals[self.drop_reversals:]
+    def estimate(self):
+        return np.mean(self.estimates())
+    def estimate_sd(self):
+        return np.std(self.estimates())
 
 ################################################################################
 # Maximum Likelihood adapter, as described in Green (1993).
