@@ -1,4 +1,5 @@
 from psychopy.gui import DlgFromDict
+from util import *
 
 run = True
 # NOTE: this is way up here because of a bug in the GUI
@@ -6,6 +7,13 @@ run = True
 # anything that uses pyglet.media. If we don't do this
 # then the dropdown selection of conditions doesn't
 # work.
+
+
+# calibrated on 4-29-14
+booth_atten = {'corner': 11.7, 'left': 29.6, 'none': 12}
+atten = booth_atten[booth()]
+print "Using attenuation of ",atten
+
 
 if run:
     setup = {'User ID': '0000', 'Group': 'f50p', 'Phase': 'train',
@@ -18,7 +26,6 @@ if run:
 import frequency
 import time
 import adapters
-from util import *
 from psychopy.visual import Window, TextStim
 from psychopy.sound import Sound
 from psychopy.core import wait
@@ -27,7 +34,7 @@ from psychopy.core import wait
 stimulus = {}
 env = {}
 
-stimulus = {'atten_dB': 11.7, # calibrated on 4-29-14
+stimulus = {'atten_dB': atten, 
             'beep_ms': 15,
             'ramp_ms': 5,
             'SOA_ms': 900,
@@ -39,7 +46,7 @@ stimulus = {'atten_dB': 11.7, # calibrated on 4-29-14
 
 env = {'debug': False,
        'sample_rate_Hz': 44100,
-       'data_file_dir': 'data',
+       'data_file_dir': '../data',
        'num_trials': 50,
        'feedback_delay_ms': 400}
 
