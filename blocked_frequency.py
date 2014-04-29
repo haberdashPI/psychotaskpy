@@ -27,7 +27,7 @@ from psychopy.core import wait
 stimulus = {}
 env = {}
 
-stimulus = {'atten_dB': 20,
+stimulus = {'atten_dB': 11.7, # calibrated on 4-29-14
             'beep_ms': 15,
             'ramp_ms': 5,
             'SOA_ms': 900,
@@ -56,7 +56,7 @@ def generate_tones_fn(stimulus,env,condition):
         space = silence(cond['length_ms'] - stimulus['beep_ms'],
                         env['sample_rate_Hz'])
 
-        stim = right(np.vstack([beep,space,beep]))
+        stim = left(np.vstack([beep,space,beep]))
 
         return Sound(stim.copy())
 
