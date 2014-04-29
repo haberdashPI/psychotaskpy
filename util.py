@@ -5,6 +5,16 @@ import numpy as np
 class Info:
     pass
 
+def booth():
+    booth_indices = {'left': 1,'middle': 2, 'right': 3,'corner': 4}
+    
+    try:
+        with open('C:\\booth_name.txt','r') as f:
+            booth = f.readline()
+            return booth
+    except:
+        return "none"
+
 def left(xs):
     xs[:,1] = np.zeros(xs.shape[0])
     return xs
