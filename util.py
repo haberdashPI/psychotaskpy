@@ -5,6 +5,18 @@ import numpy as np
 class Info:
     pass
 
+def left(xs):
+    xs[:,1] = np.zeros(xs.shape[0])
+    return xs
+
+def right(xs):
+    xs[:,0] = np.zeros(xs.shape[0])
+    return xs
+
+def silence(length_ms,sample_rate_Hz):
+    n = round(sample_rate_Hz * length_ms/1000.0)
+    return np.zeros((n,2))
+
 def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz):
     t = np.array(range(int(round(sample_rate_Hz * length_ms/1000.0))))
     ramp_t = np.array(range(int(round(sample_rate_Hz * ramp_ms/1000.0))))
