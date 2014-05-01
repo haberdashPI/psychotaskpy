@@ -88,7 +88,8 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
         info['sid'] = sid
         info['group'] = group
         info['phase'] = phase
-        info_order = ['sid','group','phase','block']
+        info['stimulus'] = condition
+        info_order = ['sid','group','phase','block','stimulus']
 
         freq = stimulus['conditions'][condition]['frequency_Hz']
         wait(3.0)
