@@ -9,24 +9,6 @@ import random
 import numpy as np
 import datetime
 
-response_1 = 'q'
-response_2 = 'p'
-
-class KeyboardResponder:
-    def __init__(self):
-        self.timer = Clock()
-
-    def get_response(self):
-        self.timer.reset()
-        response = waitKeys([response_1, response_2],timeStamped=self.timer)[0]
-        while not (response[0] == response_1 or response[0] == response_2):
-            response = waitKeys([response_1, response_2],timeStamped=self.timer)[0]
-
-        return {'value': int(response[0] == response_2), 'rt': response[1]}
-
-    def wait_for_any_key(self):
-        waitKeys()
-
 def examples(env,stimulus):
     high_message = TextStim(env['win'],
                             text='High frequency\n' +

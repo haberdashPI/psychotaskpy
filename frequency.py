@@ -13,14 +13,10 @@ response_1 = 'q'
 response_2 = 'p'
 
 class KeyboardResponder:
-    def __init__(self):
-        self.timer = Clock()
-
     def get_response(self):
-        self.timer.reset()
-        response = waitKeys([response_1, response_2],timeStamped=self.timer)[0]
+        response = waitKeys([response_1, response_2],timeStamped=True)[0]
         while not (response[0] == response_1 or response[0] == response_2):
-            response = waitKeys([response_1, response_2],timeStamped=self.timer)[0]
+            response = waitKeys([response_1, response_2],timeStamped=True)[0]
 
         return {'value': int(response[0] == response_2), 'rt': response[1]}
 
@@ -104,7 +100,8 @@ def run(env,stimulus,write_line):
         stim_2_message.draw()
         env['win'].flip()
         stim_2.play()
-
+        stim_done_time = getTime()
+        
         delay = stim_2.getDuration() + stimulus['response_delay_ms']/1000.0
         wait(delay,delay)
         
@@ -115,7 +112,7 @@ def run(env,stimulus,write_line):
         line_info = {'delta': adapter.delta,
                     'user_response': response['value'],
                     'correct_response': signal_interval,
-                    'rt': response['rt'],
+                    'rt': response['rt'] - stim_done_time,
                     'threshold': adapter.estimate(),
                     'threshold_sd': adapter.estimate_sd(),
                     'timestamp': datetime.datetime.now()}

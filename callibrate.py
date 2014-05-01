@@ -12,4 +12,3 @@ if dialog.OK:
     sound = Sound(beep.copy())
     sound.play()
     wait(5,5)
-                

@@ -10,7 +10,7 @@ run = True
 
 
 # calibrated on 4-29-14
-booth_atten = {'corner': 11.7, 'left': 29.6, 'none': 12}
+booth_atten = {'corner': 31.5, 'left': 29.6, 'none': 30}
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
@@ -47,7 +47,7 @@ stimulus = {'atten_dB': atten,
 env = {'debug': False,
        'sample_rate_Hz': 44100,
        'data_file_dir': '../data',
-       'num_trials': 50,
+       'num_trials': 60,
        'feedback_delay_ms': 400}
 
 def generate_tones_fn(stimulus,env,condition):
