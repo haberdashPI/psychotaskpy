@@ -70,6 +70,8 @@ def run(env,stimulus,write_line):
 
     stim_1 = stimulus['generate'](0)
     stim_2 = stimulus['generate'](0)
+
+    wait(1,1)
     
     for trial in range(env['num_trials']):
         signal_interval = random.randint(0,1)
