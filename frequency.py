@@ -94,7 +94,7 @@ def run(env,stimulus,write_line):
         env['win'].flip()
         stim_1.play()
 
-        delay = stim_1.getDuration() + stimulus['SOA_ms'] / 1000.0
+        delay = stimulus['SOA_ms']/1000.0 - stim_1.getDuration()
         wait(delay,delay)
 
         stim_2_message.draw()
