@@ -60,12 +60,12 @@ def run(env,stimulus,write_line):
 
         stim_1.play()
 
-        delay = stim_1.getDuration() + stimulus['SOA_ms'] / 1000.0
+        delay = stimulus['SOA_ms']/1000.0 - stim_1.getDuration()
         wait(delay,delay)
         
         stim_2.play()
 
-        delay = stim_2.getDuration() + stimulus['response_delay_ms']/1000.0 + \
+        delay = (stimulus['response_delay_ms']/1000.0 - stim_2.getDuration()) + \
           stimulus['passive_delay_ms']/1000.0
         wait(delay,delay)
                 

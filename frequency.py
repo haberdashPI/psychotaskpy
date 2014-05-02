@@ -102,7 +102,7 @@ def run(env,stimulus,write_line):
         stim_2.play()
         stim_done_time = getTime()
         
-        delay = stim_2.getDuration() + stimulus['response_delay_ms']/1000.0
+        delay = stim_2.getDuration() + (stimulus['response_delay_ms']/1000.0 - stim_2.getDuration())
         wait(delay,delay)
         
         query_message.draw()
