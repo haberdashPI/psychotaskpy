@@ -8,7 +8,6 @@ run = True
 # then the dropdown selection of conditions doesn't
 # work.
 
-
 # calibrated on 4-29-14
 booth_atten = {'corner': 31.5, 'left': 29.6, 'none': 30}
 atten = booth_atten[booth()]
@@ -16,7 +15,8 @@ print "Using attenuation of ",atten
 
 
 if run:
-    setup = {'User ID': '0000', 'Group': 'f50p', 'Phase': 'train',
+    setup = {'User ID': '0000', 'Group': 'f50p',
+             'Phase': ['train','test'],
              'Condition': ['1k50ms','1k100ms','4k50ms'],
              'Blocks': 6, 'Start Block': 0}
     dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',

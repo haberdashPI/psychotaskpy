@@ -14,7 +14,8 @@ atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
 if run:
-    setup = {'User ID': '0000', 'Group': 'f50p', 'Phase': 'passive',
+    setup = {'User ID': '0000', 'Group': 'f50p',
+             'Phase': ['passive'],
              'Condition': ['1k50ms','1k100ms','4k50ms'],
              'Blocks': 6, 'Start Block': 0}
     dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',
