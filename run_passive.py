@@ -41,7 +41,7 @@ stimulus = {'atten_dB': atten,
             
             # passive_delay_ms was found using median trial length of
             # f50ms data on Fri May 02 2014
-            'passive_delay_ms': 767
+            'passive_delay_ms': 767,
             
             'conditions':
             {'1k50ms': {'length_ms': 50, 'frequency_Hz': 1000},
