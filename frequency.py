@@ -109,7 +109,7 @@ def run(env,stimulus,write_line):
         env['win'].flip()
         response = responder.get_response()
 
-        delta = adapater.delta
+        delta = adapter.delta
         adapter.update(response['value'],signal_interval)
     
         line_info = {'delta': adapter.delta,
