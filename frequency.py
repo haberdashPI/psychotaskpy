@@ -109,6 +109,9 @@ def run(env,stimulus,write_line):
         env['win'].flip()
         response = responder.get_response()
 
+        delta = adapater.delta
+        adapter.update(response['value'],signal_interval)
+    
         line_info = {'delta': adapter.delta,
                     'user_response': response['value'],
                     'correct_response': signal_interval,
@@ -121,8 +124,6 @@ def run(env,stimulus,write_line):
                  'threshold','threshold_sd','timestamp']
         
         write_line(line_info,order)
-
-        adapter.update(response['value'],signal_interval)
 
         if response['value'] == signal_interval: correct_message.draw()
         else: incorrect_message.draw()
