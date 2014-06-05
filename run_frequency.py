@@ -15,21 +15,23 @@ print "Using attenuation of ",atten
 
 
 if run:
-    setup = {'User ID': '0000', 'Group': 'f50p',
-             'Phase': ['train','test'],
+    setup = {'User ID': '0000',
+             'Group': ['Day1','AA30PP','AA'],
+             'Phase': ['train','test','passive'],
              'Condition': ['1k50ms','1k100ms','4k50ms'],
              'Blocks': 6, 'Start Block': 0}
     dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',
-                        order=['User ID','Group','Phase','Condition',
-                               'Blocks','Start Block'])
+                         order=['User ID','Group','Phase','Condition',
+                                'Blocks','Start Block'])
 
 import frequency
+import passive
 import time
 import adapters
 from psychopy.visual import Window, TextStim
 from psychopy.sound import Sound
 from psychopy.core import wait
-
+from psychopy.event import waitKeys
 
 stimulus = {}
 env = {}
@@ -39,6 +41,7 @@ stimulus = {'atten_dB': atten,
             'ramp_ms': 5,
             'SOA_ms': 900,
             'response_delay_ms': 500,
+            'passive_delay_ms': 767,
             'conditions':
             {'1k50ms': {'length_ms': 50, 'frequency_Hz': 1000},
              '1k100ms': {'length_ms': 100, 'frequency_Hz': 1000},
@@ -94,18 +97,36 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
         freq = stimulus['conditions'][condition]['frequency_Hz']
         wait(3.0)
 
-        frequency.examples(env,stimulus)
-        
-        for i in range(start_block,num_blocks):
-            info['block'] = i
-            dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                            time.strftime("%Y_%m_%d_") + phase + "_%02d.dat")
+        if phase != 'passive':
 
-            env['adapter'] = adapters.Stepper(start=0.1*freq,
-                                            bigstep=2,littlestep=np.sqrt(2),
-                                            down=3,up=1,mult=True)
-            
-            frequency.run(env,stimulus,LineWriter(dfile,info,info_order))
+            frequency.examples(env,stimulus)
+
+            for i in range(start_block,num_blocks):
+                info['block'] = i
+                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
+                                time.strftime("%Y_%m_%d_") + phase +
+                                "_%02d.dat")
+
+                env['adapter'] = adapters.Stepper(start=0.1*freq,
+                                                bigstep=2,littlestep=np.sqrt(2),
+                                                down=3,up=1,mult=True)
+
+                frequency.run(env,stimulus,LineWriter(dfile,info,info_order))
+        else:
+            start_message = \
+              TextStim(env['win'],text='Press any key when you are ready.')
+
+            start_message.draw()
+            env['win'].flip()
+            waitKeys()
+
+            for i in range(start_block,num_blocks):
+                info['block'] = i
+                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
+                                time.strftime("%Y_%m_%d_") + phase +
+                                "_%02d.dat")
+
+                passive.run(env,stimulus,LineWriter(dfile,info,info_order))
     finally:
         env['win'].close()
 
