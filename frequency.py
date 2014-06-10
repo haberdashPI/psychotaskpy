@@ -112,7 +112,7 @@ def run(env,stimulus,write_line):
         delta = adapter.delta
         adapter.update(response['value'],signal_interval)
     
-        line_info = {'delta': adapter.delta,
+        line_info = {'delta': delta,
                     'user_response': response['value'],
                     'correct_response': signal_interval,
                     'rt': response['rt'] - stim_done_time,
