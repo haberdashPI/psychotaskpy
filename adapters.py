@@ -97,9 +97,16 @@ class Stepper:
             else:
                 return self.reversals[self.drop_reversals:]
     def estimate(self):
-        return np.mean(self.estimates())
+        if self.mult:
+            return np.exp(np.mean(np.log(self.estimates())))
+        else:
+            return np.mean(self.estimates())
+
     def estimate_sd(self):
-        return np.std(self.estimates())
+        if self.mult:
+            return np.exp(np.std(np.log(self.estimates())))
+        else:
+            return np.std(self.estimates())
 
 ################################################################################
 # Maximum Likelihood adapter, as described in Green (1993).
