@@ -59,6 +59,24 @@ def unique_file(filename_pattern):
         fname = filename_pattern % index
     return fname
 
+def nth_file(i,filename_pattern,give_up_after=10):
+    index = 0
+    count = 0
+    fname = filename_pattern % index
+
+    while count < i and index < count+give_up_after:
+        print index
+        index = index + 1
+        fname = filename_pattern % index
+        if os.path.exists(fname):
+            count = count + 1
+
+    if os.path.exists(fname):
+        return fname
+    else:
+        raise RuntimeError(("Could not find the Nth file (N=%d) with pattern: '" % (i+1) +
+                           filename_pattern + "'"))
+
 class LineWriter:
     def __init__(self,filename,info,info_order):
         self.info = info
