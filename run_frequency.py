@@ -16,7 +16,7 @@ print "Using attenuation of ",atten
 
 if run:
     setup = {'User ID': '0000',
-             'Group': ['Day1','AA30PP','AA'],
+             'Group': ['Day1','AA30PP','AA','AA30PP_2'],
              'Phase': ['train','test','passive'],
              'Condition': ['1k50ms','1k100ms','4k50ms'],
              'Blocks': 6, 'Start Block': 0}
@@ -32,6 +32,8 @@ from psychopy.visual import Window, TextStim
 from psychopy.sound import Sound
 from psychopy.core import wait
 from psychopy.event import waitKeys
+
+import pandas as pd
 
 stimulus = {}
 env = {}
@@ -97,7 +99,7 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
         freq = stimulus['conditions'][condition]['frequency_Hz']
         wait(3.0)
 
-        if phase != 'passive':
+        if phase == 'test' or phase == 'train':
 
             frequency.examples(env,stimulus)
 
@@ -112,7 +114,8 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
                                                 down=3,up=1,mult=True)
 
                 frequency.run(env,stimulus,LineWriter(dfile,info,info_order))
-        else:
+                
+        elif phase == 'passive' and group == 'AA30PP':
             start_message = \
               TextStim(env['win'],text='Press any key when you are ready.')
 
@@ -127,6 +130,32 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
                                 "_%02d.dat")
 
                 passive.run(env,stimulus,LineWriter(dfile,info,info_order))
+
+        elif phase == 'passive' and group == 'AA30PP_2':
+            start_message = \
+              TextStim(env['win'],text='Press any key when you are ready.')
+
+            start_message.draw()
+            env['win'].flip()
+            waitKeys()
+
+            for i in range(start_block,num_blocks):
+                info['block'] = i
+                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
+                                time.strftime("%Y_%m_%d_") + phase +
+                                "_%02d.dat")
+
+                tfile = nth_file(i,env['data_file_dir'] + '/' + sid + '_' +
+                                  time.strftime("%Y_%m_%d_") + 'train' +
+                                  "_%02d.dat")
+
+                track = pd.read_csv(tfile)
+
+                print "Running passively from track in file: " + tfile
+
+                passive.run_track(env,stimulus,track,
+                                  LineWriter(dfile,info,info_order))
+
     finally:
         env['win'].close()
 
