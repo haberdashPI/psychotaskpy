@@ -131,10 +131,16 @@ def run(env,stimulus,write_line):
         env['win'].flip()
         delay = env['feedback_delay_ms'] / 1000.0
         wait(delay,delay)
-        
-    TextStim(env['win'],
-             text='Threshold: %2.3f, SD: %2.3f\n (Hit any key to continue)' %
-             (adapter.estimate(),adapter.estimate_sd())).draw()
+
+    if adapter.mult:
+        TextStim(env['win'],
+                text='Threshold: %2.3f, SD: %2.1f%%\n (Hit any key to continue)' %
+                (adapter.estimate(),100*(adapter.estimate_sd()-1))).draw()
+    else:
+        TextStim(env['win'],
+                text='Threshold: %2.3f, SD: %2.3f\n (Hit any key to continue)' %
+                (adapter.estimate(),adapter.estimate_sd())).draw()
+
     env['win'].flip()
     responder.wait_for_any_key()
     
