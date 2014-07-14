@@ -1,5 +1,6 @@
 from psychopy.gui import DlgFromDict
 from util import *
+import glob
 
 run = True
 # NOTE: this is way up here because of a bug in the GUI
@@ -13,10 +14,9 @@ booth_atten = {'corner': 31.5, 'left': 29.6, 'none': 30}
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
-
 if run:
     setup = {'User ID': '0000',
-             'Group': ['Day1','AA30PP','AA','AA30PP_2'],
+             'Group': ['Day1','AA','PP','AA30PP_2'],
              'Phase': ['train','test','passive'],
              'Condition': ['1k50ms','1k100ms','4k50ms'],
              'Blocks': 6, 'Start Block': 0}
@@ -152,6 +152,34 @@ def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
                 track = pd.read_csv(tfile)
 
                 print "Running passively from track in file: " + tfile
+
+                passive.run_track(env,stimulus,track,
+                                  LineWriter(dfile,info,info_order))
+                
+        elif phase == 'passive' and group == 'PP':
+            start_message = \
+              TextStim(env['win'],text='Press any key when you are ready.')
+
+            start_message.draw()
+            env['win'].flip()
+            waitKeys()
+
+            print env['data_file_dir'] + '/' + sid + '_*train*.dat'
+            tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*train*.dat')
+            print tfiles
+
+            # make sure there are actually the right number of blocks
+            assert len(tfiles) == env['num_blocks']
+
+            for i in range(start_block,num_blocks):
+                info['block'] = i
+                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
+                                time.strftime("%Y_%m_%d_") + phase +
+                                "_%02d.dat")
+
+                track = pd.read_csv(tfiles[i])
+                
+                print "Running passively from track in file: " + tfiles[i]
 
                 passive.run_track(env,stimulus,track,
                                   LineWriter(dfile,info,info_order))
