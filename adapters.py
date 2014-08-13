@@ -16,8 +16,9 @@ class ConstantAdapter:
 
 class Stepper:
     def __init__(self,start,bigstep,littlestep,down,up,big_reverse=3,
-                 drop_reversals=3,min_reversals=7,mult=False):
-        
+                 drop_reversals=3,min_reversals=7,mult=False,min_delta=None):
+
+        self.min_delta = min_delta
         self.down = down
         self.up = up
         self.bigstep = bigstep
@@ -63,7 +64,7 @@ class Stepper:
             else:
                 new_delta = self.delta
 
-            self.delta = new_delta
+            self.delta = max(new_delta,self.min_delta)
 
         else:
             self.num_incorrect = self.num_incorrect + 1
@@ -86,7 +87,7 @@ class Stepper:
             else:
                 new_delta = self.delta
 
-            self.delta = new_delta
+            self.delta = max(new_delta,self.min_delta)
 
     def estimates(self):
         if len(self.reversals) < self.min_reversals:

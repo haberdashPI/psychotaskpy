@@ -1,11 +1,12 @@
+from util import *
 import twoAFC
 import passive
 import time
-import adapters
 from psychopy.visual import Window, TextStim
 from psychopy.core import wait
 from psychopy.event import waitKeys
 import pandas as pd
+
 
 def create_window(env):
     if env['debug']:
@@ -20,7 +21,7 @@ def create_window(env):
 def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
     env['win'] = create_window(env)
     env['num_blocks'] = num_blocks
-    stimulus['generate'] = generate_tones_fn(stimulus,env,condition)
+    stimulus['generate'] = stimulus['generate_tones_fn'](stimulus,env,condition)
     try: 
         info = {}
         info['sid'] = sid
@@ -29,7 +30,6 @@ def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
         info['stimulus'] = condition
         info_order = ['sid','group','phase','block','stimulus']
 
-        freq = 
         wait(3.0)
 
         if phase == 'train':
@@ -42,7 +42,7 @@ def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
                                 time.strftime("%Y_%m_%d_") + phase +
                                 "_%02d.dat")
 
-                env['adapter'] = env['generate_adatper'](stimulus,condition)
+                env['adapter'] = env['generate_adapter'](stimulus,condition)
 
                 twoAFC.run(env,stimulus,LineWriter(dfile,info,info_order))
 

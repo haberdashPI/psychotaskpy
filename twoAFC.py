@@ -24,23 +24,24 @@ class KeyboardResponder:
         waitKeys()
 
 def examples(env,stimulus):
-    high_message = TextStim(env['win'],
-                            text='High frequency\n' +
+    standard_message = TextStim(env['win'],
+                            text=stimulus['example_standard']+'\n' +
                                  '(Hit any key to continue)')
-    low_message = TextStim(env['win'],
-                           text='Low frequency\n'+
+    signal_message = TextStim(env['win'],
+                            text=stimulus['example_signal']+'\n'+
                                 '(Hit any key to continue)')
+
     responder = KeyboardResponder()
 
-    high_sound = stimulus['generate'](0)
-    low_sound = stimulus['generate'](100)
+    standard_sound = stimulus['generate'](0)
+    signal_sound = stimulus['generate'](stimulus['example_delta'])
 
-    low = False
+    signal = False
 
     instructions = \
        TextStim(env['win'],
-                text='You will be listening for the lower frequency sound.'+
-                'Hit any key to hear some examples.')
+                text=stimulus['instructions']+
+                ' Hit any key to hear some examples.')
 
     instructions.draw()
     env['win'].flip()
@@ -48,21 +49,26 @@ def examples(env,stimulus):
 
     clearEvents()
     while not getKeys():
-        low = not low
-        if low:
-            low_message.draw()
+        signal = not signal
+        if signal:
+            signal_message.draw()
             env['win'].flip()
-            low_sound.play()
+            signal_sound.play()
             wait(1,1)
         else:
-            high_message.draw()
+            standard_message.draw()
             env['win'].flip()
-            high_sound.play()
+            standard_sound.play()
             wait(1,1)
 
 def run(env,stimulus,write_line):
-    stim_1_message = TextStim(env['win'],text='Sound 1\t\t\t\t\t\t\t\t')
-    stim_2_message = TextStim(env['win'],text='\t\t\t\t\t\t\t\tSound 2')
+    if 'offset_stimulus_text' not in env or env['offset_stimulus_text']:
+        stim_1_message = TextStim(env['win'],text='Sound 1\t\t\t\t\t\t\t\t')
+        stim_2_message = TextStim(env['win'],text='\t\t\t\t\t\t\t\tSound 2')
+    else:
+        stim_1_message = TextStim(env['win'],text='Sound 1')
+        stim_2_message = TextStim(env['win'],text='Sound 2')
+        
     start_message = TextStim(env['win'],text='Press any key when you are ready.')
     correct_message = TextStim(env['win'],text='Correct!!')
     incorrect_message = TextStim(env['win'],text='Wrong')
@@ -71,7 +77,7 @@ def run(env,stimulus,write_line):
     responder = KeyboardResponder()
     query_message = \
         TextStim(env['win'],
-                 text='Was Sound 1 [Q] or Sound 2 [P] lower in frequency?',
+                 text='Was Sound 1 [Q] or Sound 2 [P] '+stimulus['question']+'?',
                  alignHoriz='center')
 
     start_message.draw()

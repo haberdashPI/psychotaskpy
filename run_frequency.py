@@ -1,59 +1,47 @@
+from psychopy.sound import Sound
 from psychopy.gui import DlgFromDict
 from util import *
 import glob
+import adapters
 
 run = True
-# NOTE: this is way up here because of a bug in the GUI
-# which requries that we run the dialog before importing
-# anything that uses pyglet.media. If we don't do this
-# then the dropdown selection of conditions doesn't
-# work.
 
 # calibrated on 4-29-14
-booth_atten = {'corner': 31.5, 'left': 29.6, 'none': 30}
+booth_atten = {'corner': 31.5, 'left': 29.6, 'none': 0}
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
 if run:
     setup = {'User ID': '0000',
              'Group': ['Day1','AA','PP','AA30PP_2'],
-             'Phase': ['train','test','passive'],
+             'Phase': ['train','passive_today'],
              'Condition': ['1k50ms','1k100ms','4k50ms'],
              'Blocks': 6, 'Start Block': 0}
     dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',
                          order=['User ID','Group','Phase','Condition',
                                 'Blocks','Start Block'])
 
-import frequency
-import passive
-import time
-import adapters
-from psychopy.visual import Window, TextStim
-from psychopy.sound import Sound
-from psychopy.core import wait
-from psychopy.event import waitKeys
-
-import pandas as pd
-
-stimulus = {}
-env = {}
-
-stimulus = {'atten_dB': atten, 
-            'beep_ms': 15,
-            'ramp_ms': 5,
-            'SOA_ms': 900,
-            'response_delay_ms': 500,
-            'passive_delay_ms': 767,
-            'conditions':
-            {'1k50ms': {'length_ms': 50, 'frequency_Hz': 1000},
-             '1k100ms': {'length_ms': 100, 'frequency_Hz': 1000},
-             '4k50ms': {'length_ms': 100, 'frequency_Hz': 4000}}}
-
 env = {'debug': False,
        'sample_rate_Hz': 44100,
        'data_file_dir': '../data',
        'num_trials': 60,
        'feedback_delay_ms': 400}
+
+stimulus = {'atten_dB': atten,
+            'beep_ms': 15,
+            'ramp_ms': 5,
+            'SOA_ms': 900,
+            'response_delay_ms': 500,
+            'passive_delay_ms': 767, # found from average time between responses
+            'example_standard': 'Higher frequency sound',
+            'example_signal': 'Lower frequency sound',
+            'example_delta': 100,
+            'instructions': 'You will be listening for the lower frequency sound.',
+            'question': 'lower in frequency',
+            'conditions':
+            {'1k50ms': {'length_ms': 50, 'frequency_Hz': 1000},
+             '1k100ms': {'length_ms': 100, 'frequency_Hz': 1000},
+             '4k50ms': {'length_ms': 100, 'frequency_Hz': 4000}}}
 
 def generate_tones_fn(stimulus,env,condition):
     cond = stimulus['conditions'][condition]
@@ -73,122 +61,19 @@ def generate_tones_fn(stimulus,env,condition):
         return Sound(stim.copy())
 
     return generate_tones
+stimulus['generate_tones_fn'] = generate_tones_fn
 
-def create_window(env):
-    if env['debug']:
-        win = Window([400,400])
-        win.setMouseVisible(False)
-        return win
-    else:
-        win = Window(fullscr=True)
-        win.setMouseVisible(False)
-        return win
+def generate_adapter(stimulus,condition):
+    freq = stimulus['conditions'][condition]['frequency_Hz']
+    return adapters.Stepper(start=0.1*freq,bigstep=2,littlestep=np.sqrt(2),
+                            down=3,up=1,mult=True)
+env['generate_adapter'] = generate_adapter
 
-def blocked_frequency(sid,group,phase,condition,start_block,num_blocks):
-    env['win'] = create_window(env)
-    env['num_blocks'] = num_blocks
-    stimulus['generate'] = generate_tones_fn(stimulus,env,condition)
-    try: 
-        info = {}
-        info['sid'] = sid
-        info['group'] = group
-        info['phase'] = phase
-        info['stimulus'] = condition
-        info_order = ['sid','group','phase','block','stimulus']
-
-        freq = stimulus['conditions'][condition]['frequency_Hz']
-        wait(3.0)
-
-        if phase == 'test' or phase == 'train':
-
-            frequency.examples(env,stimulus)
-
-            for i in range(start_block,num_blocks):
-                info['block'] = i
-                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                                time.strftime("%Y_%m_%d_") + phase +
-                                "_%02d.dat")
-
-                env['adapter'] = adapters.Stepper(start=0.1*freq,
-                                                bigstep=2,littlestep=np.sqrt(2),
-                                                down=3,up=1,mult=True)
-
-                frequency.run(env,stimulus,LineWriter(dfile,info,info_order))
-                
-        elif phase == 'passive' and group == 'AA30PP':
-            start_message = \
-              TextStim(env['win'],text='Press any key when you are ready.')
-
-            start_message.draw()
-            env['win'].flip()
-            waitKeys()
-
-            for i in range(start_block,num_blocks):
-                info['block'] = i
-                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                                time.strftime("%Y_%m_%d_") + phase +
-                                "_%02d.dat")
-
-                passive.run(env,stimulus,LineWriter(dfile,info,info_order))
-
-        elif phase == 'passive' and group == 'AA30PP_2':
-            start_message = \
-              TextStim(env['win'],text='Press any key when you are ready.')
-
-            start_message.draw()
-            env['win'].flip()
-            waitKeys()
-
-            for i in range(start_block,num_blocks):
-                info['block'] = i
-                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                                time.strftime("%Y_%m_%d_") + phase +
-                                "_%02d.dat")
-
-                tfile = nth_file(i,env['data_file_dir'] + '/' + sid + '_' +
-                                  time.strftime("%Y_%m_%d_") + 'train' +
-                                  "_%02d.dat")
-
-                track = pd.read_csv(tfile)
-
-                print "Running passively from track in file: " + tfile
-
-                passive.run_track(env,stimulus,track,
-                                  LineWriter(dfile,info,info_order))
-                
-        elif phase == 'passive' and group == 'PP':
-            start_message = \
-              TextStim(env['win'],text='Press any key when you are ready.')
-
-            start_message.draw()
-            env['win'].flip()
-            waitKeys()
-
-            print env['data_file_dir'] + '/' + sid + '_*train*.dat'
-            tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*train*.dat')
-            print tfiles
-
-            # make sure there are actually the right number of blocks
-            assert len(tfiles) == env['num_blocks']
-
-            for i in range(start_block,num_blocks):
-                info['block'] = i
-                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                                time.strftime("%Y_%m_%d_") + phase +
-                                "_%02d.dat")
-
-                track = pd.read_csv(tfiles[i])
-                
-                print "Running passively from track in file: " + tfiles[i]
-
-                passive.run_track(env,stimulus,track,
-                                  LineWriter(dfile,info,info_order))
-
-    finally:
-        env['win'].close()
-
-
+from run_blocks import blocked_run
+# NOTE: we do not import run_blocks until later because of a bug in pscyhopy
+# that requires we create the dialog before importing other gui components.
 
 if run and dialog.OK:
-    blocked_frequency(setup['User ID'],setup['Group'],setup['Phase'],
-                      setup['Condition'],setup['Start Block'],setup['Blocks'])
+    blocked_run(setup['User ID'],setup['Group'],setup['Phase'],
+                setup['Condition'],setup['Start Block'],setup['Blocks'],
+                stimulus,env)
