@@ -6,8 +6,8 @@ import adapters
 
 run = True
 
-# calibrated on 4-29-14
-booth_atten = {'corner': 31.5, 'left': 29.6, 'none': 30}
+# "calibrated" on 08-14-14
+booth_atten = {'corner': 47.5, 'left': 45.6, 'none': 45}
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
@@ -17,7 +17,7 @@ if run:
              'Phase': ['train','passive_today'],
              'Condition': ['ILD_4k'],
              'Blocks': 6, 'Start Block': 0}
-    dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',
+    dialog = DlgFromDict(dictionary=setup,title='ILD',
                          order=['User ID','Group','Phase','Condition',
                                 'Blocks','Start Block'])
 
