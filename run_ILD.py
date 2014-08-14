@@ -1,0 +1,82 @@
+from psychopy.sound import Sound
+from psychopy.gui import DlgFromDict
+from util import *
+import glob
+import adapters
+
+run = True
+
+# calibrated on 4-29-14
+booth_atten = {'corner': 31.5, 'left': 29.6, 'none': 30}
+atten = booth_atten[booth()]
+print "Using attenuation of ",atten
+
+if run:
+    setup = {'User ID': '0000',
+             'Group': ['Day1','A','P','A30P_2'],
+             'Phase': ['train','passive_today'],
+             'Condition': ['ILD_4k'],
+             'Blocks': 6, 'Start Block': 0}
+    dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',
+                         order=['User ID','Group','Phase','Condition',
+                                'Blocks','Start Block'])
+
+env = {'debug': False,
+       'sample_rate_Hz': 44100,
+       'data_file_dir': '../data',
+       'num_trials': 60,
+       'feedback_delay_ms': 400,
+       'offset_stimulus_text': False}
+
+stimulus = {'atten_dB': atten, 
+            'ramp_ms': 10, 
+            'SOA_ms': 950,# ??
+            'response_delay_ms': 500,
+            'passive_delay_ms': 767,
+            'example_standard': 'Sound in the center',
+            'example_signal': 'Sound to the right',
+            'example_delta': 8,
+            'start_delta_dB': 6,
+            'instructions': 'You will be listening for the sound to your right ear.',
+            'question': 'to the right',
+            'conditions':
+            {'ILD_4k': {'length_ms': 300, 'frequency_Hz': 4000}}} ## ??
+
+def generate_tones_fn(stimulus,env,condition):
+    cond = stimulus['conditions'][condition]
+    def generate_tones(delta):
+        # TODO: this is probably wrong, delta 0
+        # and delta N will always be different loudnesses.
+
+        left_tone = left(tone(cond['frequency_Hz'],
+                            cond['length_ms'],
+                            stimulus['atten_dB'] + delta/2,
+                            stimulus['ramp_ms'],
+                            env['sample_rate_Hz']))
+
+        right_tone = right(tone(cond['frequency_Hz'],
+                            cond['length_ms'],
+                            stimulus['atten_dB'] - delta/2,
+                            stimulus['ramp_ms'],
+                            env['sample_rate_Hz']))
+
+        return Sound((left_tone + right_tone).copy())
+
+    return generate_tones
+stimulus['generate_tones_fn'] = generate_tones_fn
+
+def generate_adapter(stimulus,condition):
+    return adapters.Stepper(start=stimulus['start_delta_dB'],
+                        bigstep=0.5,littlestep=0.25,
+                        down=3,up=1,min_delta=0)
+
+env['generate_adapter'] = generate_adapter
+
+from run_blocks import *
+# NOTE: we do not import run_blocks until later because of a bug in pscyhopy
+# that requires we create the dialog before importing other gui components.
+
+if run and dialog.OK:
+    blocked_run(setup['User ID'],setup['Group'],setup['Phase'],
+                setup['Condition'],setup['Start Block'],setup['Blocks'],
+                stimulus,env)
