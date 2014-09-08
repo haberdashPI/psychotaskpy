@@ -13,10 +13,10 @@ print "Using attenuation of ",atten
 
 if run:
     setup = {'User ID': '0000',
-             'Group': ['Day1','A','P','A30P_2'],
+             'Group': ['Day1','A','P','A_3hP'],
              'Phase': ['train','passive_today'],
-             'Condition': ['ILD_4k'],
-             'Blocks': 6, 'Start Block': 0}
+             'Condition': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB'],
+             'Blocks': 5, 'Start Block': 0}
     dialog = DlgFromDict(dictionary=setup,title='ILD',
                          order=['User ID','Group','Phase','Condition',
                                 'Blocks','Start Block'])
@@ -33,21 +33,21 @@ stimulus = {'atten_dB': atten,
             'SOA_ms': 950,# ??
             'response_delay_ms': 500,
             'passive_delay_ms': 767,
-            'example_standard': 'Sound in the center',
-            'example_signal': 'Sound to the right',
+            'example_standard': 'Sound more to the center',
+            'example_signal': 'Sound more to the right',
             'example_delta': 8,
             'start_delta_dB': 6,
             'instructions': 'You will be listening for the sound to your right ear.',
             'question': 'to the right',
             'conditions':
-            {'ILD_4k': {'length_ms': 300, 'frequency_Hz': 4000}}} ## ??
+            {'ILD_4k0dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 0},
+             'ILD_4k6dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 6},
+             'ILD_6k0dB': {'length_ms': 300, 'frequency_Hz': 6000,'offset_dB': 0}}}
 
 def generate_tones_fn(stimulus,env,condition):
     cond = stimulus['conditions'][condition]
     def generate_tones(delta):
-        # TODO: this is probably wrong, delta 0
-        # and delta N will always be different loudnesses.
-
+        delta + cond['offset_dB']
         left_tone = left(tone(cond['frequency_Hz'],
                             cond['length_ms'],
                             stimulus['atten_dB'] + delta/2,
