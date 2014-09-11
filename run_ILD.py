@@ -6,8 +6,10 @@ import adapters
 
 run = True
 
-# "calibrated" on 08-14-14
-booth_atten = {'corner': 47.5, 'left': 45.6, 'none': 45}
+# calibrated on 09-11-14
+booth_atten = {'corner': {'right': 47.5, 'left': 47.5}, 
+               'left': {'right': 38.7, 'left': 35.6}, 
+               'none': {'right': 45, 'left': 45}}
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
@@ -50,13 +52,13 @@ def generate_tones_fn(stimulus,env,condition):
         delta + cond['offset_dB']
         left_tone = left(tone(cond['frequency_Hz'],
                             cond['length_ms'],
-                            stimulus['atten_dB'] + delta/2,
+                            stimulus['atten_dB']['left'] + delta/2,
                             stimulus['ramp_ms'],
                             env['sample_rate_Hz']))
 
         right_tone = right(tone(cond['frequency_Hz'],
                             cond['length_ms'],
-                            stimulus['atten_dB'] - delta/2,
+                            stimulus['atten_dB']['right'] - delta/2,
                             stimulus['ramp_ms'],
                             env['sample_rate_Hz']))
 
