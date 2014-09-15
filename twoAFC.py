@@ -54,12 +54,14 @@ def examples(env,stimulus):
             signal_message.draw()
             env['win'].flip()
             signal_sound.play()
-            wait(1,1)
+            delay = stimulus['SOA_ms']/1000.0
+            wait(delay,delay)
         else:
             standard_message.draw()
             env['win'].flip()
             standard_sound.play()
-            wait(1,1)
+            delay = stimulus['SOA_ms']/1000.0
+            wait(delay,delay)
 
 def run(env,stimulus,write_line):
     if 'offset_stimulus_text' not in env or env['offset_stimulus_text']:
@@ -100,7 +102,7 @@ def run(env,stimulus,write_line):
         env['win'].flip()
         stim_1.play()
 
-        delay = stimulus['SOA_ms']/1000.0 - stim_1.getDuration()
+        delay = stimulus['SOA_ms']/1000.0
         wait(delay,delay)
 
         stim_2_message.draw()
@@ -108,7 +110,7 @@ def run(env,stimulus,write_line):
         stim_2.play()
         stim_done_time = getTime()
         
-        delay = stim_2.getDuration() + (stimulus['response_delay_ms']/1000.0 - stim_2.getDuration())
+        delay = stim_2.getDuration() + stimulus['response_delay_ms']/1000.0
         wait(delay,delay)
         
         query_message.draw()
