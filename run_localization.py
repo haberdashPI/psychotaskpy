@@ -18,15 +18,16 @@ if run:
              'Group': ['Day1','A','P','A_3hP'],
              'Phase': ['train','passive_today'],
              'Condition': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB','ITD_500Hz0us'],
-             'Blocks': 5, 'Start Block': 0}
+             'Blocks': 5, 'Start Block': 0,
+             'Starting Level': 0}
     dialog = DlgFromDict(dictionary=setup,title='ILD',
                          order=['User ID','Group','Phase','Condition',
-                                'Blocks','Start Block'])
+                                'Blocks','Start Block', 'Starting Level'])
 
 env = {'debug': False,
        'sample_rate_Hz': 44100,
        'data_file_dir': '../data',
-       'num_trials': 60,
+       'num_trials': 5,
        'feedback_delay_ms': 400,
        'offset_stimulus_text': False}
 
@@ -41,13 +42,13 @@ stimulus = {'atten_dB': atten,
             'question': 'to the right',
             'conditions':
             {'ILD_4k0dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 0, 'type': 'ILD',
-                            'start_delta_dB': 6, 'example_delta': 8},
+                             'example_delta': 8},
              'ILD_4k6dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 6, 'type': 'ILD',
-                            'start_delta_dB': 6, 'example_delta': 8},
+                             'example_delta': 8},
              'ILD_6k0dB': {'length_ms': 300, 'frequency_Hz': 6000,'offset_dB': 0, 'type': 'ILD',
-                            'start_delta_dB': 6, 'example_delta': 8},
+                             'example_delta': 8},
              'ITD_500Hz0us': {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 0, 'type': 'ITD',
-                              'start_delta_us': 1, 'example_delta': 200}}}
+                             'example_delta': 200}}}
              
 def us_to_phase(us,freq):
     return 2*pi * us/10**6 * freq
@@ -101,11 +102,11 @@ stimulus['generate_tones_fn'] = generate_tones_fn
 def generate_adapter(stimulus,condition):
     cond = stimulus['conditions'][condition]
     if cond['type'] == 'ILD':
-        return adapters.Stepper(start=cond['start_delta_dB'],
+        return adapters.Stepper(start=setup['Starting Level'],
                             bigstep=0.5,littlestep=0.25,
                             down=3,up=1,min_delta=0)
     elif cond['type'] == 'ITD':
-        return adapters.Stepper(start=cond['start_delta_us'],
+        return adapters.Stepper(start=setup['Starting Level'],
                     bigstep=10**0.2,littlestep=10**0.05,
                     down=3,up=1,min_delta=1,mult=True)
 
