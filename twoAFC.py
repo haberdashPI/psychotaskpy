@@ -23,7 +23,7 @@ class KeyboardResponder:
     def wait_for_any_key(self):
         waitKeys()
 
-def examples(env,stimulus):
+def examples(env,stimulus,condition):
     standard_message = TextStim(env['win'],
                             text=stimulus['example_standard']+'\n' +
                                  '(Hit any key to continue)')
@@ -34,7 +34,7 @@ def examples(env,stimulus):
     responder = KeyboardResponder()
 
     standard_sound = stimulus['generate'](0)
-    signal_sound = stimulus['generate'](stimulus['example_delta'])
+    signal_sound = stimulus['generate'](stimulus['conditions'][condition]['example_delta'])
 
     signal = False
 
