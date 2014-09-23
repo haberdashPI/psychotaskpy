@@ -34,7 +34,7 @@ def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
 
         if phase == 'train':
 
-            twoAFC.examples(env,stimulus)
+            twoAFC.examples(env,stimulus,condition)
 
             for i in range(start_block,num_blocks):
                 info['block'] = i
