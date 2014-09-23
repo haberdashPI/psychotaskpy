@@ -27,7 +27,7 @@ def silence(length_ms,sample_rate_Hz):
     n = round(sample_rate_Hz * length_ms/1000.0)
     return np.zeros((n,2))
 
-def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz):
+def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz,phase=0):
     t = np.array(range(int(round(sample_rate_Hz * length_ms/1000.0))))
     ramp_t = np.array(range(int(round(sample_rate_Hz * ramp_ms/1000.0))))
 
@@ -39,7 +39,7 @@ def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz):
                 0.5*np.cos((pi*ramp_t)/len(ramp_t))+0.5])
 
     # unnormalized tone
-    xs = envelope * np.sin(2*pi*t / (sample_rate_Hz/freq_Hz))
+    xs = envelope * np.sin(2*pi*t / (sample_rate_Hz/freq_Hz) + phase)
 
     # normalized tone
     rms = np.sqrt(np.mean(xs**2))
