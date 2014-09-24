@@ -13,7 +13,7 @@ print "Using attenuation of ",atten
 
 if run:
     setup = {'User ID': '0000',
-             'Group': ['Day1','F_50ms','FP_50ms','F30P_50ms','F30P2_50ms','FD_50ms'],
+             'Group': ['Day1','F_50ms','F30Ps_50ms','F30Pd_50ms','PF_50ms','FD_50ms'],
              'Phase': ['train','passive_static','passive_today'],
              'Condition': ['f1k50ms','f1k100ms','f4k50ms'],
              'Blocks': 6, 'Start Block': 0}
