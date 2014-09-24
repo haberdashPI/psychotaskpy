@@ -27,7 +27,7 @@ if run:
 env = {'debug': False,
        'sample_rate_Hz': 44100,
        'data_file_dir': '../data',
-       'num_trials': 5,
+       'num_trials': 60,
        'feedback_delay_ms': 400,
        'offset_stimulus_text': False}
 
