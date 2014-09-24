@@ -6,16 +6,16 @@ import adapters
 
 run = True
 
-# calibrated on 4-29-14
-booth_atten = {'corner': 31.5, 'left': 29.6, 'none': 0}
+# calibrated on 9-15-14
+booth_atten = {'corner': 27.6, 'left': 25.7, 'none': 26}
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
 if run:
     setup = {'User ID': '0000',
-             'Group': ['Day1','AA','PP','AA30PP_2'],
-             'Phase': ['train','passive_today'],
-             'Condition': ['1k50ms','1k100ms','4k50ms'],
+             'Group': ['Day1','F_50ms','FP_50ms','F30P_50ms','F30P2_50ms','FD_50ms'],
+             'Phase': ['train','passive_static','passive_today'],
+             'Condition': ['f1k50ms','f1k100ms','f4k50ms'],
              'Blocks': 6, 'Start Block': 0}
     dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',
                          order=['User ID','Group','Phase','Condition',
@@ -39,9 +39,9 @@ stimulus = {'atten_dB': atten,
             'instructions': 'You will be listening for the lower frequency sound.',
             'question': 'lower in frequency',
             'conditions':
-            {'1k50ms': {'length_ms': 50, 'frequency_Hz': 1000},
-             '1k100ms': {'length_ms': 100, 'frequency_Hz': 1000},
-             '4k50ms': {'length_ms': 100, 'frequency_Hz': 4000}}}
+            {'1k50ms': {'length_ms': 50, 'frequency_Hz': 1000, 'example_delta': 100},
+             '1k100ms': {'length_ms': 100, 'frequency_Hz': 1000,'example_delta': 100},
+             '4k50ms': {'length_ms': 100, 'frequency_Hz': 4000, 'example_delta': 100 }}}
 
 def generate_tones_fn(stimulus,env,condition):
     cond = stimulus['conditions'][condition]

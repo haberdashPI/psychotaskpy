@@ -13,8 +13,8 @@ print "Using attenuation of ",atten
 
 if run:
     setup = {'User ID': '0000',
-             'Group': ['Day1','AA','PP','AA30PP_2','F50D'],
-             'Phase': ['train','passive_today'],
+             'Group': ['FD_50ms'],
+             'Phase': ['train','passive_today','passive_static'],
              'Condition': ['d1k50ms','d1k100ms','d4k50ms'],
              'Blocks': 6, 'Start Block': 0}
     dialog = DlgFromDict(dictionary=setup,title='Duration Discrimination',
