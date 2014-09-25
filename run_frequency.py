@@ -39,9 +39,9 @@ stimulus = {'atten_dB': atten,
             'instructions': 'You will be listening for the lower frequency sound.',
             'question': 'lower in frequency',
             'conditions':
-            {'1k50ms': {'length_ms': 50, 'frequency_Hz': 1000, 'example_delta': 100},
-             '1k100ms': {'length_ms': 100, 'frequency_Hz': 1000,'example_delta': 100},
-             '4k50ms': {'length_ms': 100, 'frequency_Hz': 4000, 'example_delta': 100 }}}
+            {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000, 'example_delta': 100},
+             'f1k100ms': {'length_ms': 100, 'frequency_Hz': 1000,'example_delta': 100},
+             'f4k50ms': {'length_ms': 100, 'frequency_Hz': 4000, 'example_delta': 100 }}}
 
 def generate_tones_fn(stimulus,env,condition):
     cond = stimulus['conditions'][condition]
