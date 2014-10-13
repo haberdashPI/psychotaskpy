@@ -15,9 +15,9 @@ print "Using attenuation of ",atten
 
 if run:
     setup = {'User ID': '0000',
-             'Group': ['Day1','A','P','A_3hP'],
+             'Group': ['Day1','A','P','A_3hP','L30TLp','L24LToff'],
              'Phase': ['train','passive_today'],
-             'Condition': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB','ITD_500Hz0us'],
+             'Condition': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB','ITD_500Hz0us','ITD_500Hz200us'],
              'Blocks': 5, 'Start Block': 0,
              'Starting Level': 0}
     dialog = DlgFromDict(dictionary=setup,title='ILD',
@@ -48,6 +48,8 @@ stimulus = {'atten_dB': atten,
              'ILD_6k0dB': {'length_ms': 300, 'frequency_Hz': 6000,'offset_dB': 0, 'type': 'ILD',
                              'example_delta': 8},
              'ITD_500Hz0us': {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 0, 'type': 'ITD',
+                             'example_delta': 200},
+			 'ITD_500Hz200us' : {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 200, 'type': 'ITD',
                              'example_delta': 200}}}
              
 def us_to_phase(us,freq):
