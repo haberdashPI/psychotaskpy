@@ -21,7 +21,9 @@ def create_window(env):
 def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
     env['win'] = create_window(env)
     env['num_blocks'] = num_blocks
-    stimulus['generate'] = stimulus['generate_tones_fn'](stimulus,env,condition)
+    stimulus['generate'] = \
+      lambda d: stimulus['generate_tones'](stimulus,env,condition,d)
+
     try: 
         info = {}
         info['sid'] = sid
@@ -117,7 +119,10 @@ def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
 
                 passive.run_track(env,stimulus,track,
                                   LineWriter(dfile,info,info_order))
-
+                
+    except twoAFC.UserEscape:
+        print "User requested program exit."
     finally:
         env['win'].close()
+    
 

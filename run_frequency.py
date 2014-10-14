@@ -12,15 +12,12 @@ booth_atten = {'corner': 27.6, 'left': 25.7, # calibrated on 9-15-14
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
-if run:
-    setup = {'User ID': '0000',
-             'Group': ['Day1','F_50ms','F30Ps_50ms','F30Pd_50ms','PF_50ms','FD_50ms'],
-             'Phase': ['train','passive_static','passive_today'],
-             'Condition': ['f1k50ms','f1k100ms','f4k50ms'],
-             'Blocks': 6, 'Start Block': 0}
-    dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',
-                         order=['User ID','Group','Phase','Condition',
-                                'Blocks','Start Block'])
+setup = {'User ID': '0000',
+         'Group': ['Day1','F_50ms','F30Ps_50ms','F30Pd_50ms','PF_50ms','FD_50ms'],
+         'Phase': ['train','passive_static','passive_today'],
+         'Condition': ['f1k50ms','f1k100ms','f4k50ms'],
+         'Blocks': 6, 'Start Block': 0}
+setup_order=['User ID','Group','Phase','Condition','Blocks','Start Block']    
 
 env = {'debug': False,
        'sample_rate_Hz': 44100,
@@ -44,31 +41,31 @@ stimulus = {'atten_dB': atten,
              'f1k100ms': {'length_ms': 100, 'frequency_Hz': 1000,'example_delta': 100},
              'f4k50ms': {'length_ms': 100, 'frequency_Hz': 4000, 'example_delta': 100 }}}
 
-def generate_tones_fn(stimulus,env,condition):
+def generate_tones(stimulus,env,condition,delta):
     cond = stimulus['conditions'][condition]
-    def generate_tones(delta):
 
-        beep = tone(cond['frequency_Hz'] - delta,
-                    stimulus['beep_ms'],
-                    stimulus['atten_dB'],
-                    stimulus['ramp_ms'],
+    beep = tone(cond['frequency_Hz'] - delta,
+                stimulus['beep_ms'],
+                stimulus['atten_dB'],
+                stimulus['ramp_ms'],
+                env['sample_rate_Hz'])
+
+    space = silence(cond['length_ms'] - stimulus['beep_ms'],
                     env['sample_rate_Hz'])
 
-        space = silence(cond['length_ms'] - stimulus['beep_ms'],
-                        env['sample_rate_Hz'])
+    stim = left(np.vstack([beep,space,beep]))
 
-        stim = left(np.vstack([beep,space,beep]))
-
-        return Sound(stim.copy())
-
-    return generate_tones
-stimulus['generate_tones_fn'] = generate_tones_fn
+    return Sound(stim.copy())
+stimulus['generate_tones'] = generate_tones
 
 def generate_adapter(stimulus,condition):
     freq = stimulus['conditions'][condition]['frequency_Hz']
     return adapters.Stepper(start=0.1*freq,bigstep=2,littlestep=np.sqrt(2),
                             down=3,up=1,mult=True)
 env['generate_adapter'] = generate_adapter
+
+dialog = DlgFromDict(dictionary=setup,title='Frequency Discrimination',
+                     order=setup_order)
 
 from run_blocks import blocked_run
 # NOTE: we do not import run_blocks until later because of a bug in pscyhopy

@@ -9,43 +9,7 @@ import random
 import numpy as np
 import datetime
 import pandas as pd
-
-def examples(env,stimulus):
-    high_message = TextStim(env['win'],
-                            text='High frequency\n' +
-                                 '(Hit any key to continue)')
-    low_message = TextStim(env['win'],
-                           text='Low frequency\n'+
-                                '(Hit any key to continue)')
-    responder = KeyboardResponder()
-
-    high_sound = stimulus['generate'](0)
-    low_sound = stimulus['generate'](100)
-
-    low = False
-
-    instructions = \
-       TextStim(env['win'],
-                text='You will be listening for the lower frequency sound.'+
-                'Hit any key to hear some examples.')
-
-    instructions.draw()
-    env['win'].flip()
-    waitKeys()
-
-    clearEvents()
-    while not getKeys():
-        low = not low
-        if low:
-            low_message.draw()
-            env['win'].flip()
-            low_sound.play()
-            wait(1,1)
-        else:
-            high_message.draw()
-            env['win'].flip()
-            high_sound.play()
-            wait(1,1)
+from twoAFC import KeyboardResponder
 
 def run(env,stimulus,write_line):
     
@@ -54,9 +18,14 @@ def run(env,stimulus,write_line):
     stim_1 = stimulus['generate'](0)
     stim_2 = stimulus['generate'](0)
 
+    responder = KeyboardResponder()
+
     wait(1,1)
     
     for trial in range(env['num_trials']):
+        # provide the user an oportunity to escape from the program
+        responder.getKeys()
+        
         signal_interval = random.randint(0,1)
 
         stim_1.play()
@@ -83,14 +52,19 @@ def run_track(env,stimulus,track,write_line):
     
     env['win'].flip()
 
+    responder = KeyboardResponder()
+
     wait(1,1)
 
     delays_ms = pd.to_datetime(track.timestamp).diff()
-    # HACK!! 
+    # HACK!! (could be broken by an update to numpy)
     delays_ms = delays_ms.apply(lambda x: x.astype('float64') / 1e6)
     delays_ms[0] = delays_ms.median()
 
     for track_index,track_row in track.iterrows():
+        # provide the user an oportunity to escape from the program
+        responder.getKeys()
+
         signal_interval = track_row['correct_response']
         if signal_interval == 0:
             stim_1 = stimulus['generate'](track_row['delta'])

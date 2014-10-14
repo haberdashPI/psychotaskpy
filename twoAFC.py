@@ -12,16 +12,31 @@ import datetime
 response_1 = 'q'
 response_2 = 'p'
 
+class UserEscape(Exception):
+    pass
+
 class KeyboardResponder:
     def get_response(self):
         response = waitKeys([response_1, response_2],timeStamped=True)[0]
         while not (response[0] == response_1 or response[0] == response_2):
+            if response[0] == 'escape':
+                raise UserEscape()
             response = waitKeys([response_1, response_2],timeStamped=True)[0]
 
         return {'value': int(response[0] == response_2), 'rt': response[1]}
 
-    def wait_for_any_key(self):
-        waitKeys()
+    def waitKeys(self):
+        response = waitKeys()
+        if response[0] == 'escape':
+                raise UserEscape()
+        return response
+        
+
+    def getKeys(self):
+        response = getKeys()
+        if len(response) > 0 and response[0] == 'escape':
+                raise UserEscape()
+        return response
 
 def examples(env,stimulus,condition):
     standard_message = TextStim(env['win'],
@@ -45,10 +60,10 @@ def examples(env,stimulus,condition):
 
     instructions.draw()
     env['win'].flip()
-    waitKeys()
+    responder.waitKeys()
 
     clearEvents()
-    while not getKeys():
+    while not responder.getKeys():
         signal = not signal
         if signal:
             signal_message.draw()
@@ -84,7 +99,7 @@ def run(env,stimulus,write_line):
 
     start_message.draw()
     env['win'].flip()
-    responder.wait_for_any_key()
+    responder.waitKeys()
     env['win'].flip()
     
     for trial in range(env['num_trials']):
@@ -150,5 +165,5 @@ def run(env,stimulus,write_line):
                 (adapter.estimate(),adapter.estimate_sd())).draw()
 
     env['win'].flip()
-    responder.wait_for_any_key()
+    responder.waitKeys()
     

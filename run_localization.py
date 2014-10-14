@@ -14,16 +14,14 @@ booth_atten = \
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
-if run:
-    setup = {'User ID': '0000',
-             'Group': ['Day1','A','P','A_3hP','L30TLp','L24LToff'],
-             'Phase': ['train','passive_today'],
-             'Condition': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB','ITD_500Hz0us','ITD_500Hz200us'],
-             'Blocks': 5, 'Start Block': 0,
-             'Starting Level': 0}
-    dialog = DlgFromDict(dictionary=setup,title='ILD',
-                         order=['User ID','Group','Phase','Condition',
-                                'Blocks','Start Block', 'Starting Level'])
+setup = {'User ID': '0000',
+         'Group': ['Day1','A','P','A_3hP','L30TLp','L24LToff'],
+         'Phase': ['train','passive_today'],
+         'Condition': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB','ITD_500Hz0us','ITD_500Hz200us'],
+         'Blocks': 5, 'Start Block': 0,
+         'Starting Level': 0}
+setup_order=['User ID','Group','Phase','Condition',
+             'Blocks','Start Block', 'Starting Level'])
 
 env = {'debug': False,
        'sample_rate_Hz': 44100,
@@ -42,65 +40,62 @@ stimulus = {'atten_dB': atten,
             'instructions': 'You will be listening for the sound to your right ear.',
             'question': 'to the right',
             'conditions':
-            {'ILD_4k0dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 0, 'type': 'ILD',
-                             'example_delta': 8},
-             'ILD_4k6dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 6, 'type': 'ILD',
-                             'example_delta': 8},
-             'ILD_6k0dB': {'length_ms': 300, 'frequency_Hz': 6000,'offset_dB': 0, 'type': 'ILD',
-                             'example_delta': 8},
-             'ITD_500Hz0us': {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 0, 'type': 'ITD',
-                             'example_delta': 200},
-			 'ITD_500Hz200us' : {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 200, 'type': 'ITD',
-                             'example_delta': 200}}}
-             
+            {'ILD_4k0dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 0,
+                            'type': 'ILD','example_delta': 8},
+             'ILD_4k6dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 6,
+                           'type': 'ILD','example_delta': 8},
+             'ILD_6k0dB': {'length_ms': 300, 'frequency_Hz': 6000,'offset_dB': 0,
+                           'type': 'ILD','example_delta': 8},
+             'ITD_500Hz0us': {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 0,
+                              'type': 'ITD','example_delta': 200},
+			 'ITD_500Hz200us' : {'length_ms': 300, 'frequency_Hz': 500,
+                                  'offset_us': 200, 'type': 'ITD',
+                                  'example_delta': 200}}}
+
+# convert microseconds into phase differences
 def us_to_phase(us,freq):
     return 2*pi * us/10**6 * freq
 
-def generate_tones_fn(stimulus,env,condition):
+def generate_tones(stimulus,env,condition,delta):
     cond = stimulus['conditions'][condition]
-    def generate_tones(delta):
-        
-        if cond['type'] == 'ILD':
-            # BUG FIXED: delta was not changed for generalization conditions
-            delta = delta + cond['offset_dB']
-            left_tone = left(tone(cond['frequency_Hz'],
-                                cond['length_ms'],
-                                stimulus['atten_dB']['left'] + delta/2,
-                                stimulus['ramp_ms'],
-                                env['sample_rate_Hz']))
 
-            right_tone = right(tone(cond['frequency_Hz'],
-                                cond['length_ms'],
-                                stimulus['atten_dB']['right'] - delta/2,
-                                stimulus['ramp_ms'],
-                                env['sample_rate_Hz']))
+    if cond['type'] == 'ILD':
+        delta = delta + cond['offset_dB']
+        left_tone = left(tone(cond['frequency_Hz'],
+                            cond['length_ms'],
+                            stimulus['atten_dB']['left'] + delta/2,
+                            stimulus['ramp_ms'],
+                            env['sample_rate_Hz']))
 
-            return Sound((left_tone + right_tone).copy())
-            
-        elif cond['type'] == 'ITD':
-            delta = delta + cond['offset_us']
-            left_tone = left(tone(cond['frequency_Hz'],
-                                cond['length_ms'],
-                                stimulus['atten_dB']['left'],
-                                stimulus['ramp_ms'],
-                                env['sample_rate_Hz'],
-                                phase = -us_to_phase(delta,cond['frequency_Hz'])/2))
-                                
-            right_tone = right(tone(cond['frequency_Hz'],
-                                cond['length_ms'],
-                                stimulus['atten_dB']['left'],
-                                stimulus['ramp_ms'],
-                                env['sample_rate_Hz'],
-                                phase = +us_to_phase(delta,cond['frequency_Hz'])/2))
-                                
-            return Sound((left_tone + right_tone).copy())
-            
-        else:
-            raise RuntimeError('Unknown stimulus type: ' + cond['type'])
-            
+        right_tone = right(tone(cond['frequency_Hz'],
+                            cond['length_ms'],
+                            stimulus['atten_dB']['right'] - delta/2,
+                            stimulus['ramp_ms'],
+                            env['sample_rate_Hz']))
 
-    return generate_tones
-stimulus['generate_tones_fn'] = generate_tones_fn
+        return Sound((left_tone + right_tone).copy())
+
+    elif cond['type'] == 'ITD':
+        delta = delta + cond['offset_us']
+        left_tone = left(tone(cond['frequency_Hz'],
+                            cond['length_ms'],
+                            stimulus['atten_dB']['left'],
+                            stimulus['ramp_ms'],
+                            env['sample_rate_Hz'],
+                            phase = -us_to_phase(delta,cond['frequency_Hz'])/2))
+
+        right_tone = right(tone(cond['frequency_Hz'],
+                            cond['length_ms'],
+                            stimulus['atten_dB']['left'],
+                            stimulus['ramp_ms'],
+                            env['sample_rate_Hz'],
+                            phase = +us_to_phase(delta,cond['frequency_Hz'])/2))
+
+        return Sound((left_tone + right_tone).copy())
+
+    else:
+        raise RuntimeError('Unknown stimulus type: ' + cond['type'])
+stimulus['generate_tones'] = generate_tones
 
 def generate_adapter(stimulus,condition):
     cond = stimulus['conditions'][condition]
@@ -114,6 +109,8 @@ def generate_adapter(stimulus,condition):
                     down=3,up=1,min_delta=1,mult=True)
 
 env['generate_adapter'] = generate_adapter
+
+dialog = DlgFromDict(dictionary=setup,title='ILD',order=setup_order)
 
 from run_blocks import *
 # NOTE: we do not import run_blocks until later because of a bug in pscyhopy
