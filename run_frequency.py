@@ -6,8 +6,9 @@ import adapters
 
 run = True
 
-# calibrated on 9-15-14
-booth_atten = {'corner': 27.6, 'left': 25.7, 'none': 26}
+booth_atten = {'corner': 27.6, 'left': 25.7, # calibrated on 9-15-14
+               'middle': 30.7, # calibrated on 10-14-14
+               'none': 26}
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 

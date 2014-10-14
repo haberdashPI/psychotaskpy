@@ -16,5 +16,5 @@ if dialog.OK:
     sound.play()
     wait(5,5)
 
-# left attenuation: 35.6
-# right attenuation: 38.7
+# left attenuation: 46.7
+# right attenuation: 47.8
