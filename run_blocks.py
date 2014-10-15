@@ -1,12 +1,13 @@
-from util import *
-import twoAFC
-import passive
-import time
 from psychopy.visual import Window, TextStim
 from psychopy.core import wait
 from psychopy.event import waitKeys
-import pandas as pd
+from psychopy.sound import Sound
+from util import *
 
+import twoAFC
+import passive
+import time
+import pandas as pd
 
 def create_window(env):
     if env['debug']:
@@ -18,11 +19,12 @@ def create_window(env):
         win.setMouseVisible(False)
         return win
 
-def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
+def blocked_run(env,stimulus,sid,group,phase,condition,start_block,num_blocks):
+    
     env['win'] = create_window(env)
     env['num_blocks'] = num_blocks
     stimulus['generate'] = \
-      lambda d: stimulus['generate_tones'](stimulus,env,condition,d)
+      lambda d: Sound(stimulus['generate_tones'](env,stimulus,condition,d))
 
     try: 
         info = {}
@@ -44,7 +46,7 @@ def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
                                 time.strftime("%Y_%m_%d_") + phase +
                                 "_%02d.dat")
 
-                env['adapter'] = env['generate_adapter'](stimulus,condition)
+                env['adapter'] = env['generate_adapter'](env,stimulus,condition)
 
                 twoAFC.run(env,stimulus,LineWriter(dfile,info,info_order))
 
