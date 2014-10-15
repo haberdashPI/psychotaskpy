@@ -67,8 +67,8 @@ def generate_tones_fn(stimulus,env,condition):
 stimulus['generate_tones_fn'] = generate_tones_fn
 
 def generate_adapter(stimulus,condition):
-    freq = stimulus['conditions'][condition]['frequency_Hz']
-    return adapters.Stepper(start=0.1*freq,bigstep=2,littlestep=np.sqrt(2),
+    freq = stimulus['conditions'][condition]['length_ms']
+    return adapters.Stepper(start=0.1*length,bigstep=2,littlestep=np.sqrt(2),
                             down=3,up=1,mult=True)
 env['generate_adapter'] = generate_adapter
 
