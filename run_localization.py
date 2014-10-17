@@ -3,7 +3,11 @@ import glob
 import adapters
 import experiment
 
-run = True
+# setup the types of phases we want to use
+import twoAFC
+import passive
+
+phases = ['2AFC','passive_today','passive_static']
 
 booth_atten = \
     {'corner': {'right': 45.3, 'left': 43.6}, # calibrated on 09-15-14
@@ -107,4 +111,4 @@ def generate_adapter(env,stimulus,condition):
 
 env['generate_adapter'] = generate_adapter
 
-experiment.start(env,stimulus)
+experiment.start(env,stimulus,phases)
