@@ -1,8 +1,7 @@
 import expyriment as ex
 import run_blocks
 import pygame
-
-phases = ['train','passive_static','passive_today','passive_first']
+import phase
 
 def collect_fields(setup,order):
     for field in order:
@@ -15,7 +14,7 @@ def collect_fields(setup,order):
 
     return setup
 
-def start(env,stimulus):
+def start(env,stimulus,phases):
     setup = {'Group': env['groups'], 'Phase': phases,
          'Condition': stimulus['condition_order'],
          'Blocks': env['default_blocks'],
@@ -31,7 +30,7 @@ def start(env,stimulus):
     exp = ex.design.Experiment(name=env['title'],
                                foreground_colour=[255,255,255],
                                background_colour=[128,128,128],
-                               text_size=50)
+                               text_size=40)
 
     env['exp'] = exp
     if env['debug']:

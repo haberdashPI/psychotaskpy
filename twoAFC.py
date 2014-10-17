@@ -1,12 +1,19 @@
 import expyriment as ex
 
 from util import tone, Info
+from phase import phase
+
 import random
 import numpy as np
 import datetime
 
 response_1 = 'q'
 response_2 = 'p'
+
+@phase('2AFC')
+def train(env,stimulus,condition,block,is_start,write_line):
+    if start: examples(env,stimulus,condition)
+    run(env,stimulus,write_line)
 
 def examples(env,stimulus,condition):
     standard_message = ex.stimuli.TextBox(
