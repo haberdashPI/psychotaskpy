@@ -1,29 +1,53 @@
-# the possible ways to run blocks of training
-from psychopy.gui import DlgFromDict
+import expyriment as ex
+import run_blocks
+import pygame
 
 phases = ['train','passive_static','passive_today','passive_first']
 
+def collect_fields(setup,order):
+    for field in order:
+        if isinstance(setup[field],list):
+            tm = ex.io.TextMenu(field,setup[field],400)
+            setup[field] = setup[field][tm.get(0)]
+        else:
+            ti = ex.io.TextInput(field)
+            setup[field] = int(ti.get(str(setup[field])))
+
+    return setup
+
 def start(env,stimulus):
-    setup = {'User ID': '0000','Group': env['groups'], 'Phase': phases,
+    setup = {'Group': env['groups'], 'Phase': phases,
          'Condition': stimulus['condition_order'],
          'Blocks': env['default_blocks'],
          'Start Block': 0}
-    order = ['User ID','Group','Phase','Condition','Blocks','Start Block']
+    order = ['Group','Phase','Condition','Blocks','Start Block']
 
     if env.has_key('fields'):
         setup.update(env['fields'])
         order += env['field_order']
 
-    dialog = DlgFromDict(dictionary=setup,title=env['title'],
-                         order=order)
+    ex.control.defaults.pause_key = pygame.K_F12
 
-    if env.has_key('fields'):
-        for field in env['fields'].keys():
-            env['fields'][field] = setup[field]
+    exp = ex.design.Experiment(name=env['title'],
+                               foreground_colour=[255,255,255],
+                               background_colour=[128,128,128],
+                               text_size=50)
 
-    if dialog.OK:
-        import run_blocks
-        
+    env['exp'] = exp
+    if env['debug']:
+        ex.control.set_develop_mode(True)
+
+    ex.control.initialize(exp)
+    setup = collect_fields(setup,order)
+
+    ex.control.start(exp,skip_ready_screen = True)
+    try:
         run_blocks.blocked_run(env,stimulus,
-                        setup['User ID'],setup['Group'],setup['Phase'],
-                        setup['Condition'],setup['Start Block'],setup['Blocks'])
+            exp.subject,setup['Group'],setup['Phase'],
+            setup['Condition'],setup['Start Block'],setup['Blocks'])
+
+    finally:
+        ex.control.end()
+
+    print setup
+

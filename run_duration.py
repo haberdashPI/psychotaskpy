@@ -1,7 +1,6 @@
 from util import *
 import glob
 import adapters
-#import run_blocks
 import experiment
 
 booth_atten = {'corner': 27.6, 'left': 25.7, # calibrated on 9-15-14

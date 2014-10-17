@@ -1,130 +1,103 @@
-from psychopy.visual import Window, TextStim
-from psychopy.core import wait
-from psychopy.event import waitKeys
-from psychopy.sound import Sound
+import expyriment as ex
 from util import *
+import pygame.mixer as mix
 
 import twoAFC
 import passive
 import time
 import pandas as pd
-
-def create_window(env):
-    if env['debug']:
-        win = Window([400,400])
-        win.setMouseVisible(False)
-        return win
-    else:
-        win = Window(fullscr=True)
-        win.setMouseVisible(False)
-        return win
+from functools32 import lru_cache
 
 def blocked_run(env,stimulus,sid,group,phase,condition,start_block,num_blocks):
-    
-    env['win'] = create_window(env)
     env['num_blocks'] = num_blocks
-    stimulus['generate'] = \
-      lambda d: Sound(stimulus['generate_tones'](env,stimulus,condition,d))
 
-    try: 
-        info = {}
-        info['sid'] = sid
-        info['group'] = group
-        info['phase'] = phase
-        info['stimulus'] = condition
-        info_order = ['sid','group','phase','block','stimulus']
+    def as_sound(floats):
+        return mix.Sound(np.asarray(floats*(2**15),'int16'))
 
-        wait(3.0)
+    @lru_cache(maxsize=None)
+    def generate(d):
+        return as_sound(stimulus['generate_tones'](env,stimulus,condition,d))
+    stimulus['generate'] = generate
+    
+    info = {}
+    info['sid'] = sid
+    info['group'] = group
+    info['phase'] = phase
+    info['stimulus'] = condition
+    info_order = ['sid','group','phase','block','stimulus']
 
-        if phase == 'train':
+    if phase == 'train':
 
-            twoAFC.examples(env,stimulus,condition)
+        twoAFC.examples(env,stimulus,condition)
 
-            for i in range(start_block,num_blocks):
-                info['block'] = i
-                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                                time.strftime("%Y_%m_%d_") + phase +
-                                "_%02d.dat")
+        for i in range(start_block,num_blocks):
+            info['block'] = i
+            dfile = unique_file(env['data_file_dir'] + '/' + str(sid) + '_' +
+                            time.strftime("%Y_%m_%d_") + str(phase) +
+                            "_%02d.dat")
 
-                env['adapter'] = env['generate_adapter'](env,stimulus,condition)
+            env['adapter'] = env['generate_adapter'](env,stimulus,condition)
 
-                twoAFC.run(env,stimulus,LineWriter(dfile,info,info_order))
+            twoAFC.run(env,stimulus,LineWriter(dfile,info,info_order))
 
-        # passively present the same sound over and over
-        elif phase == 'passive_static':
-            start_message = \
-              TextStim(env['win'],text='Press any key when you are ready.')
+    # passively present the same sound over and over
+    elif phase == 'passive_static':
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
 
-            start_message.draw()
-            env['win'].flip()
-            waitKeys()
+        for i in range(start_block,num_blocks):
+            info['block'] = i
+            dfile = unique_file(env['data_file_dir'] + '/' + str(sid) + '_' +
+                            time.strftime("%Y_%m_%d_") + str(phase) +
+                            "_%02d.dat")
 
-            for i in range(start_block,num_blocks):
-                info['block'] = i
-                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                                time.strftime("%Y_%m_%d_") + phase +
-                                "_%02d.dat")
+            passive.run(env,stimulus,LineWriter(dfile,info,info_order))
 
-                passive.run(env,stimulus,LineWriter(dfile,info,info_order))
+    # passively present tracks from the same day
+    elif phase == 'passive_today':
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
 
-        # passively present tracks from the same day
-        elif phase == 'passive_today':
-            start_message = \
-              TextStim(env['win'],text='Press any key when you are ready.')
+        for i in range(start_block,num_blocks):
+            info['block'] = i
+            dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
+                            time.strftime("%Y_%m_%d_") + phase +
+                            "_%02d.dat")
 
-            start_message.draw()
-            env['win'].flip()
-            waitKeys()
+            tfile = nth_file(i,env['data_file_dir'] + '/' + sid + '_' +
+                              time.strftime("%Y_%m_%d_") + 'train' +
+                              "_%02d.dat")
 
-            for i in range(start_block,num_blocks):
-                info['block'] = i
-                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                                time.strftime("%Y_%m_%d_") + phase +
-                                "_%02d.dat")
+            track = pd.read_csv(tfile)
 
-                tfile = nth_file(i,env['data_file_dir'] + '/' + sid + '_' +
-                                  time.strftime("%Y_%m_%d_") + 'train' +
-                                  "_%02d.dat")
+            print "Running passively from track in file: " + tfile
 
-                track = pd.read_csv(tfile)
+            passive.run_track(env,stimulus,track,
+                              LineWriter(dfile,info,info_order))
 
-                print "Running passively from track in file: " + tfile
+    # passively present tracks from the first day
+    elif phase == 'passive_first':
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
 
-                passive.run_track(env,stimulus,track,
-                                  LineWriter(dfile,info,info_order))
+        print env['data_file_dir'] + '/' + sid + '_*train*.dat'
+        tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*train*.dat')
+        print tfiles
 
-        # passively present tracks from the first day
-        elif phase == 'passive_first':
-            start_message = \
-              TextStim(env['win'],text='Press any key when you are ready.')
+        # make sure there are actually the right number of blocks
+        assert len(tfiles) == env['num_blocks']
 
-            start_message.draw()
-            env['win'].flip()
-            waitKeys()
+        for i in range(start_block,num_blocks):
+            info['block'] = i
+            dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
+                            time.strftime("%Y_%m_%d_") + phase +
+                            "_%02d.dat")
 
-            print env['data_file_dir'] + '/' + sid + '_*train*.dat'
-            tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*train*.dat')
-            print tfiles
+            track = pd.read_csv(tfiles[i])
 
-            # make sure there are actually the right number of blocks
-            assert len(tfiles) == env['num_blocks']
+            print "Running passively from track in file: " + tfiles[i]
 
-            for i in range(start_block,num_blocks):
-                info['block'] = i
-                dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                                time.strftime("%Y_%m_%d_") + phase +
-                                "_%02d.dat")
-
-                track = pd.read_csv(tfiles[i])
-                
-                print "Running passively from track in file: " + tfiles[i]
-
-                passive.run_track(env,stimulus,track,
-                                  LineWriter(dfile,info,info_order))
-                
-    except twoAFC.UserEscape:
-        print "User requested program exit."
-    finally:
-        env['win'].close()
+            passive.run_track(env,stimulus,track,
+                              LineWriter(dfile,info,info_order))
     
 
