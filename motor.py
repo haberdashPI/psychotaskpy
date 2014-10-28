@@ -1,151 +1,163 @@
-import pyxid
-from psychopy.sound import Sound
-from psychopy.visual import TextStim
-from psychopy.event import getKeys, waitKeys, clearEvents
-from psychopy.core import *
+import expyriment
 from util import tone, Info
+import numpy as np
+import Queue
+import pygame
+from phase import phase
 
 use_response_pad = False
-trigger_key = 2 # round center button
+
+KEY_UP_CODE = 128
+KEY_DOWN_CODE = 144
+KEYBOARD_TRIGGER = pygame.locals.K_SPACE
+NANO_TRIGGER = 36 #(far left, bottom button)
+
+@phase('motor_synch')
+def run_blocks(env,stimulus,condition,block,is_start,write_line):
+    if is_start:
+        ex.stimuli.TextBox(stimulus['instructions']).present()
+        env['exp'].keyobard.wait()
+    run(env,stimulus,write_line)
 
 # keyboard responder (used for debugging purposes)
 class KeyboardResponder:
-    def __init__(self,key,short_time_ms = 10):
+    def __init__(self,exp,key = KEYBOARD_TRIGGER):
         self.key = key
-        self.short_time = short_time_ms / 1000.0
-    def prepare(self):
-        clearEvents()
-    def wait_for_trigger(self):
-        waitKeys([self.key])
+        self.exp = exp
+    def __enter__(self):
+        self.exp.keyboard.clear()
+        key = self.exp.keyboard.wait()
+        while key is self.key:
+            key = self.exp.keyboard.wait()
 
-    def set_end(self,wait_time_ms):
-        self.wait = getTime() + wait_time_ms / 1000.0
-    def collect_events_until_end(self,block,events):
-        while getTime() < self.wait:
-            for key_event in getKeys([self.key],timeStamped=True):
-                event = {'time': key_event[1], 'block': block}
-                events.append(event)
-            time = max(0,min(self.wait - getTime(),self.short_time))
-            wait(time,time)
+        return ResponseCollector(self)
+    def collect_messages(self):
+        keys = []
+        key = self.exp.keyboard.check(self.key)
+        while key is not None:
+            keys.append(key)
+            key = self.exp.keyboard.check(self.key)
 
-        return events
-    def all_events_up_to_end(self,block,events):
-        # TODO: this might miss a few keyboard presses
-        # but since this implementaiton is really just a
-        # debugging place holder, I'm not worrying about it right now
-        return self.collect_events_until_end(block,events)
-        
+        return keys
+    def __exit__(self,type,value,traceback):
+        pass
 
-class CedrusPadResponder:
-    def __init__(self,key,short_time_ms = 10):
-        pyxid.use_response_pad_timer = True
-        devices = pyxid.get_xid_devices()
+# midi drum pad responder
+# TODO: should I just use the built in get_message? (yes
+# I think that would be clearer)
+class NanopadResponder:
+    def __init__(self,key = NANO_TRIGGER):
+        self.dev = rtmidi.MidiIn(queue_size_limit=2**12)
         self.key = key
-        self.dev = devices[0]
-        self.short_time = short_time_ms/1000.0
         
-    def prepare(self):
-        self.dev.clear_response_queue()
-        self.dev.reset_base_timer()
-        self.dev.reset_rt_timer()
-        self.prepare_time = getTime()/1000.0
-        
-    def wait_for_trigger(self):
-        triggered = False
-        self.dev.clear_response_queue()
-        
-        # wait for the trigger button to be pressed
-        self.dev.poll_for_response()
-        while (self.dev.response_queue_size() > 0) or (not triggered):
-            if self.dev.response_queue_size() > 0:
-                response = self.dev.get_next_response()
-                if not response['pressed'] and response['key'] == self.key:
-                    triggered = True
-                    
-            wait(self.short_time,self.short_time)
-            self.dev.poll_for_response()   
+    def __enter__(self):
+        self.dev.open_port(0)
+        #self.messages = Queue.Queue(4096)
+        #self.dev.set_callback(lambda m,_: self._save_message(m))
 
-    def set_end(self,wait_time_ms):
-        self.wait = getTime() + wait_time_ms/1000.0
-        #self.dev.query_base_timer() + wait_time_ms
-            
-    def collect_events_until_end(self,block,events):
-        # get as many responses as we can off of the queue.
-        while getTime() < (self.wait - self.short_time):
-            if self.dev.response_queue_size() > 0:
-                response = self.dev.get_next_response()
-                if response['pressed'] and response['key'] == self.key:
-                    events.append({'time': response['time'] / 1000.0, 
-                                   'block': block})
+        message = self.dev.get_message()
+        while message is None or message == self.key:
+            message = self.dev.get_message()
 
-            #time = min(self.wait - self.dev.query_base_timer(),self.short_time)
-            time = min(self.wait - getTime(),self.short_time)
-            
-            wait(time,time)
+        return ResponseCollector(self)
 
-            self.dev.poll_for_response()
+    #def _save_message(self,message):
+    #    if self.listening and self.key == message[0][1]: self.messages.put(message)
 
-        # wait the remainder of the time.
-        #if self.dev.query_base_timer() < self.wait:
-        if getTime() < self.wait:
-            #time = (self.wait - self.dev.query_base_timer())/1000.0
-            time = self.wait - getTime()
-            wait(time,time)
+    def collect_messages():
+        # collect all queued events
+        # messages = []
+        # try:
+        #     while True:
+        #         events.append(self.responder.messages.get_nowait())
+        # except Queue.Empty:
+        #     pass
 
-        return events
+        # return messages
+        messages = []
+        message = self.dev.get_message()
+        while message is not None:
+            messaged.append(message)
+            message = self.dev.get_message()
 
-    def all_events_up_to_end(self,block,events):
-        # collect most of the events
-        events = self.collect_events_until_end(block,events)
+        return messages
 
-        # get any remaining events off of the queue
-        self.dev.poll_for_response()
-        while self.dev.response_queue_size() > 0:
-            #print self.dev.query_base_timer()
-            
-            response = self.dev.get_next_response()
+    def __exit__(self,type,value,traceback):
+        self.dev.close_port()
+        del self.messages
 
-            events.append({'time': response['time'] / 1000.0,
-                           'block': block})
+class ResponseCollector:
+    def __init__(self,responder):
+        self.responder = responder
+        self.last_collected = 0
+        self.last_event = 0
+        self.clock = expyriment.misc.Clock()
+        self.clock.reset_stopwatch()
+                
+    def collect_events(self,until_ms=0):
+        # wait some time
+        self.last_collected += until_ms
+        time_passed = self.clock.stopwatch_time
+        if self.last_collected > time_passed:
+            self.clock.wait(self.last_collected - time_passed)
 
-            self.dev.poll_for_response()
+        messages = self.responder.collect_messages()
+        # oragnize all messages 
+        if messages:
+            times = np.cumsum(map(lambda m: m[1],messages))*1000.0
+            codes = np.array(map(lambda m: m[0][0],messages))
+            strengths = np.array(map(lambda m: m[0][1],messages))
 
-        # only return those events that fall within the 
-        # given window of time.
-        return filter(lambda e: e['time'] + self.prepare_time < self.wait,events)
-        
+            event_offset = self.last_event
+            self.last_event = times[len(times)-1] + event_offset
+
+            # filter out anything but keydown messages 
+            times = times[(codes == KEY_DOWN_CODE)] + event_offset
+            strengths = strengths[(codes == KEY_DOWN_CODE)]
+
+            return times,strengths
+        else:
+            return [],[]
+
+def collect_events(time,cycles):
+    with NanoPadResponder() as r:
+        for index in range(cycles):
+            print "--------------------"
+            times,strengths = r.collect_events(time)
+            print index
+            print times
 
 def run(env,stimulus,write_line):
+    # TODO: use another key to start each new trial
     if use_response_pad:
-        start_message = TextStim(env['win'],text='Press center button to start a block.')
+        start_message = \
+            ex.stimuli.TextBox('Press anything but the bottom left button to start a block.',(400,400))
     else:
-        start_message = TextStim(env['win'],text='Press space bar to start a block.')
+        start_message = \
+          ex.stimuli.TextBox('Press anything but space bar to start a block.',(400,400))
     
-    beep = Sound(tone(stimulus['freq_Hz'],stimulus['beep_ms'],
-                      stimulus['atten_dB'],stimulus['ramp_ms'],
-                      env['sample_rate_Hz']).copy())
+    rhythm = stimulus['generate'](stimulus['n_synch'])
     
     if use_response_pad:
-        responder = CedrusPadResponder(trigger_key)
+        responder = NanpadResponder()
     else:
-        responder = KeyboardResponder('space')
-    
+        responder = KeyboardResponder()
     
     for block in range(env['num_blocks']):
-        start_message.draw()
-        env['win'].flip()
-        responder.wait_for_trigger()
-        responder.prepare()
-        env['win'].flip()
+        start_message.present()
+        listen_time = rhythm.get_length()*1000 + stimulus['continuation_ms']
         
-        events = []
-        for cycle in range(env['n_synch']):
-            for interval in stimulus['intervals']:
-                responder.set_end(interval)
-                beep.play()
-                events = responder.collect_events_until_end(block,events)
-                
-        responder.set_end(env['continuation_ms'])
-        events = responder.all_events_up_to_end(block,events)
-                
-        for event in events: write_line(event,['block','time'])
+        timestamp = datetime.datetime.now()
+        # TODO: wait for user to indicate they're starting
+        env['exp'].screen.clear()
+        with responder:
+            rhtyhm.play()
+            
+            for i in range(np.ceil(listen_time / 500.0)):
+                for time,pressure in responder.collect_events(500):
+                    write_line({'block': block,
+                                'time': time,
+                                'pressure': pressure,
+                                'block_timestamp': timestamp},
+                                ['block','time','pressure','block_timestamp'])
+    

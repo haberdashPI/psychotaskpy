@@ -18,5 +18,5 @@ def phase(fn_or_name=None):
 def list_phases():
     return _phases.keys()
 
-def call_phase(str,*args):
+def run_phase(str,*args):
     return _phases[str](*args)

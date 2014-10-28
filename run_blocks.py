@@ -2,7 +2,7 @@ import expyriment as ex
 from util import *
 import pygame.mixer as mix
 
-from phase import call_phase
+from phase import run_phase
 import time
 import pandas as pd
 from functools32 import lru_cache
@@ -14,8 +14,8 @@ def blocked_run(env,stimulus,sid,group,phase,condition,start_block,num_blocks):
         return mix.Sound(np.asarray(floats*(2**15),'int16'))
 
     @lru_cache(maxsize=None)
-    def generate(d):
-        return as_sound(stimulus['generate_tones'](env,stimulus,condition,d))
+    def generate(*params):
+        return as_sound(stimulus['generate_tones'](env,stimulus,condition,*params))
     stimulus['generate'] = generate
     
     info = {}
@@ -30,7 +30,8 @@ def blocked_run(env,stimulus,sid,group,phase,condition,start_block,num_blocks):
         dfile = unique_file(env['data_file_dir'] + '/' + str(sid) + '_' +
                             time.strftime("%Y_%m_%d_") + str(phase) +
                             "_%02d.dat")
-        env['adapter'] = env['generate_adapter'](env,stimulus,condition)
-        call_phase(phase,env,stimulus,condition,block,block == start_block,
-                   LineWriter(dfile,info,info_order))
+        if env.has_key('generate_adapter'):
+            env['adapter'] = env['generate_adapter'](env,stimulus,condition)
+        run_phase(phase,env,stimulus,condition,block,block == start_block,
+                  LineWriter(dfile,info,info_order))
 
