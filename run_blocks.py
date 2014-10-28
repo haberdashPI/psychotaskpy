@@ -30,7 +30,8 @@ def blocked_run(sid,group,phase,condition,start_block,num_blocks,stimulus,env):
         info['group'] = group
         info['phase'] = phase
         info['stimulus'] = condition
-        info_order = ['sid','group','phase','block','stimulus']
+        info['booth'] = booth()
+        info_order = ['sid','group','phase','block','stimulus','booth']
 
         wait(3.0)
 
