@@ -27,7 +27,7 @@ def blocked_run(env,stimulus,sid,group,phase,condition,start_block,num_blocks):
 
     for block in range(start_block,num_blocks):
         info['block'] = block
-        dfile = unique_file(env['data_file_dir'] + '/' + str(sid) + '_' +
+        dfile = unique_file(env['data_file_dir'] + '/' + ("%04d" % sid) + '_' +
                             time.strftime("%Y_%m_%d_") + str(phase) +
                             "_%02d.dat")
         if env.has_key('generate_adapter'):
