@@ -12,7 +12,7 @@ response_2 = 'p'
 
 @phase('2AFC')
 def train(env,stimulus,condition,block,is_start,write_line):
-    if start: examples(env,stimulus,condition)
+    if is_start: examples(env,stimulus,condition)
     run(env,stimulus,write_line)
 
 def examples(env,stimulus,condition):
