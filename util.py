@@ -2,6 +2,8 @@ import os
 from math import pi
 import numpy as np
 
+MESSAGE_DIMS = (1000,400)
+
 class Info:
     pass
 
@@ -59,7 +61,7 @@ def unique_file(filename_pattern):
         fname = filename_pattern % index
     return fname
 
-def nth_file(i,filename_pattern,give_up_after=10):
+def nth_file(i,filename_pattern,give_up_after=10,wrap_around=False):
     index = 0
     count = 0
     fname = filename_pattern % index
@@ -74,6 +76,8 @@ def nth_file(i,filename_pattern,give_up_after=10):
     if os.path.exists(fname):
         return fname
     else:
+        if wrap_around and i > 0:
+            return nth_file(i % (count+1),filename_pattern,give_up_after)
         raise RuntimeError(("Could not find the Nth file (N=%d) with pattern: '" % (i+1) +
                            filename_pattern + "'"))
 
