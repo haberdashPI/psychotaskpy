@@ -15,11 +15,12 @@ def collect_fields(setup,order):
     return setup
 
 def start(env,stimulus,phases):
-    setup = {'Group': env['groups'], 'Phase': phases,
+    setup = {'Subject ID': 0,
+         'Group': env['groups'], 'Phase': phases,
          'Condition': stimulus['condition_order'],
          'Blocks': env['default_blocks'],
          'Start Block': 0}
-    order = ['Group','Phase','Condition','Blocks','Start Block']
+    order = ['Subject ID','Group','Phase','Condition','Blocks','Start Block']
 
     if env.has_key('fields'):
         setup.update(env['fields'])
@@ -39,7 +40,7 @@ def start(env,stimulus,phases):
     ex.control.initialize(exp)
     setup = collect_fields(setup,order)
 
-    ex.control.start(exp,skip_ready_screen = True)
+    ex.control.start(exp,skip_ready_screen = True,subject_id=setup['Subject ID'])
     try:
         run_blocks.blocked_run(env,stimulus,
             exp.subject,setup['Group'],setup['Phase'],
