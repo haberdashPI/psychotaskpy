@@ -25,7 +25,7 @@ def passive_today(env,stimulus,condition,block,is_start,write_line):
     # find the approrpiate data file from today
     tfile = nth_file(block,env['data_file_dir'] + '/' + sid + '_' +
                         time.strftime("%Y_%m_%d_") + 'train' +
-                        "_%02d.dat")
+                        "_%02d.dat",wrap_around=True)
 
     print "Running passively from file: " + tfile
     run_track(env,stimulus,pd.read_csv(tfile),write_line)
