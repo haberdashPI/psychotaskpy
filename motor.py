@@ -1,5 +1,6 @@
 import expyriment as ex
 from util import tone, Info
+import util
 import numpy as np
 import pygame
 import datetime
@@ -14,7 +15,7 @@ NANO_TRIGGER = 36 #(far left, bottom button)
 @phase('motor_synch')
 def run_blocks(env,stimulus,condition,block,is_start,write_line):
     if is_start:
-        ex.stimuli.TextBox(stimulus['instructions'],(400,400)).present()
+        ex.stimuli.TextBox(stimulus['instructions'],util.MESSAGE_DIMS).present()
         env['exp'].keyboard.wait()
 
         ex.stimuli.TextLine('Loading...').present()
@@ -145,10 +146,10 @@ def run(env,stimulus,block,write_line):
 
     if env['use_response_pad']:
         start_message = \
-            ex.stimuli.TextBox('Press bottom left button to begin.',(400,400))                                       
+            ex.stimuli.TextBox('Press bottom left button to begin.',util.MESSAGE_DIMS)                                       
     else:
         start_message = \
-          ex.stimuli.TextBox('Press spacebar to begin.',(400,400))
+          ex.stimuli.TextBox('Press spacebar to begin.',util.MESSAGE_DIMS)
           
     countdown = [ex.stimuli.TextLine(str(i)) for i in
                  range(env['countdown_length'],0,-1)]
