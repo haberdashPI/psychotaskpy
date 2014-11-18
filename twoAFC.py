@@ -3,6 +3,7 @@ import expyriment as ex
 from util import tone, Info
 from phase import phase
 
+import util
 import random
 import numpy as np
 import datetime
@@ -18,11 +19,11 @@ def train(env,stimulus,condition,block,is_start,write_line):
 def examples(env,stimulus,condition):
     standard_message = ex.stimuli.TextBox(
                             stimulus['example_standard']+'\n' +
-                                 '(Hit any key to continue)',(400,400))
+                                 '(Hit any key to continue)',util.MESSAGE_DIMS)
     standard_message.preload()
     signal_message = ex.stimuli.TextBox(
                             stimulus['example_signal']+'\n'+
-                                '(Hit any key to continue)',(400,400))
+                                '(Hit any key to continue)',util.MESSAGE_DIMS)
     signal_message.preload()
 
     standard_sound = stimulus['generate'](0)
@@ -34,7 +35,7 @@ def examples(env,stimulus,condition):
     instructions = \
        ex.stimuli.TextBox(
             stimulus['instructions']+'\nHit any key to hear some examples.',
-            (800,400))
+            util.MESSAGE_DIMS)
 
     env['exp'].keyboard.clear()
     instructions.present()
@@ -108,10 +109,16 @@ def run(env,stimulus,write_line):
           env['exp'].keyboard.wait_char([response_1,response_2])
         rt += stimulus['response_delay_ms']
         response = int(response == response_2)
-        
+
+        if response == signal_interval:
+            correct_message.present()
+        else:
+            incorrect_message.present()
+        env['exp'].clock.wait(env['feedback_delay_ms'])
+
         delta = adapter.delta
         adapter.update(response,signal_interval)
-    
+
         line_info = {'delta': delta,
                     'user_response': response,
                     'correct_response': signal_interval,
@@ -125,25 +132,18 @@ def run(env,stimulus,write_line):
         
         write_line(line_info,order)
 
-        if response == signal_interval:
-            correct_message.present()
-        else:
-            incorrect_message.present()
-
-        env['exp'].clock.wait(env['feedback_delay_ms'])
-
     if adapter.mult:
-        ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f%%\n',
+        ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f%%\n'
                            '(Hit any key to continue)' %
                             (adapter.estimate(),
                              100.0*(adapter.estimate_sd()-1)),
-                             (400,400)).present()
+                             util.MESSAGE_DIMS).present()
     else:
-        ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f%%\n',
+        ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f%%\n'
                            '(Hit any key to continue)' %
                             (adapter.estimate(),
                              100.0*(adapter.estimate_sd()-1)),
-                             (400,400)).present()
+                             util.MESSAGE_DIMS).present()
 
     env['exp'].keyboard.clear()
     env['exp'].keyboard.wait()
