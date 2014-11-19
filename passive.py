@@ -7,6 +7,7 @@ import random
 import numpy as np
 import datetime
 import pandas as pd
+import time
 
 @phase
 def passive_static(env,stimulus,condition,block,is_start,write_line):
@@ -18,13 +19,15 @@ def passive_static(env,stimulus,condition,block,is_start,write_line):
 
 @phase
 def passive_today(env,stimulus,condition,block,is_start,write_line):
+    sid = ('%04d' % env['exp'].subject)
+        
     if is_start:
         ex.stimuli.TextLine('Press any key when you are ready.').present()
         env['exp'].keyboard.wait()
 
     # find the approrpiate data file from today
     tfile = nth_file(block,env['data_file_dir'] + '/' + sid + '_' +
-                        time.strftime("%Y_%m_%d_") + 'train' +
+                        time.strftime("%Y_%m_%d_") + '2AFC' +
                         "_%02d.dat",wrap_around=True)
 
     print "Running passively from file: " + tfile
@@ -32,18 +35,20 @@ def passive_today(env,stimulus,condition,block,is_start,write_line):
 
 @phase
 def passive_first(env,stimulus,condition,block,is_start,write_line):
+    sid = ('%04d' % env['exp'].subject)
+    
     if is_start:
         ex.stimuli.TextLine('Press any key when you are ready.').present()
         env['exp'].keyboard.wait()
 
-        print env['data_file_dir'] + '/' + sid + '_*train*.dat'
-        tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*train*.dat')
+        print env['data_file_dir'] + '/' + sid + '_*2AFC*.dat'
+        tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*2AFC*.dat')
         print tfiles
 
         # make sure there are actually the right number of blocks
         assert len(tfiles) == env['num_blocks']
     
-    tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*train*.dat')
+    tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*2AFC*.dat')
     print "Running passively from track in file: " + tfiles[block]
     run_track(env,stimulus,pd.read_csv(tfiles[block]),write_line)
 
