@@ -65,4 +65,7 @@ def generate_adapter(env,stimulus,condition):
                             down=3,up=1,mult=True)
 env['generate_adapter'] = generate_adapter
 
-experiment.start(env,stimulus,phases)
+# only run the expeirment if this file is being called directly
+# from the command line.
+if __name__ == "__main__":
+    experiment.start(env,stimulus,phases)
