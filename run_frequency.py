@@ -20,7 +20,7 @@ print "Using attenuation of ",atten
 env = {'title': 'Frequency Discrimination',
        'debug': False,
        'sample_rate_Hz': 44100,
-       'groups': ['Day1','F_50ms','F30Ps_50ms','F30Pd_50ms','PF_50ms','FD_50ms'],
+       'groups': ['Day1','F_50ms','F30Ps_50ms','F30Pd_50ms','PF_50ms','FD_50ms','fs30Pd_50ms'],
        'default_blocks': 6,
        'data_file_dir': '../data',
        'num_trials': 60,
