@@ -177,7 +177,8 @@ def run(env,stimulus,block,write_line):
         go_text.present()
 
         # start playing the sound
-        listen_time = rhythm.get_length()*1000 + stimulus['continuation_ms']
+        listen_time = rhythm.get_length()*1000 - \
+            stimulus['continuation_ms']*env['countdown_length']
         rhythm.play()
 
         # keep the go_text up for a while
@@ -188,9 +189,8 @@ def run(env,stimulus,block,write_line):
         # record all user taps to a file
         for i in range(int(np.ceil(listen_time / 500.0))):
             for time,pressure in r.collect_events(500):
-                write_line({'block': block,
-                            'time': time,
+                write_line({'time': time - env['countdown_interval']*,
                             'pressure': pressure,
                             'block_timestamp': timestamp},
-                            ['block','time','pressure','block_timestamp'])
+                            ['time','pressure','block_timestamp'])
     
