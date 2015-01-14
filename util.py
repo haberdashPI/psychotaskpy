@@ -49,10 +49,6 @@ def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz,phase=0):
 
     return np.vstack([xs, xs]).T
 
-def rhythm_intervals(interval):
-    if interval == 'A': return [107, 429, 214, 1065, 536, 643, 321, 857]
-    else: raise Warning('No interval "'+interval+'" found.')
-
 def unique_file(filename_pattern):
     index = 0
     fname = filename_pattern % index

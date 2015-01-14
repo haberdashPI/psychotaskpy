@@ -14,7 +14,7 @@ env = {'title': 'Frequency Discrimination',
        'use_response_pad': True,
        'countdown_interval': 750,
        'countdown_length': 3,
-       'debug': True,
+       'debug': False,
        'sample_rate_Hz': 44100,
        'groups': ['Test'],
        'default_blocks': 1,
@@ -23,14 +23,18 @@ env = {'title': 'Frequency Discrimination',
        'feedback_delay_ms': 400}
     
 rhythm = 'A'
-stimulus = {'atten_dB': 20, # TODO: calibration
+def rhythm_intervals(interval):
+    if interval == 'A': return [107, 429, 214, 1065, 536, 643, 321, 857]
+    else: raise Warning('No interval "'+interval+'" found.')
+
+stimulus = {'atten_dB': 20,
             'freq_Hz': 250,
             'beep_ms': 25,
             'ramp_ms': 10,
             'instructions': 'Tap along to the rhythm you hear. Continue to repeat the rhythm once the sound stops. ',
             'intervals': rhythm_intervals(rhythm),
-            'continuation_ms': 4700,#47000,
-            'n_synch': 1,#6,
+            'continuation_ms': 47000,
+            'n_synch': 6,
             'condition_order': ['rhtyhm A']}
 
 def generate_tones(env,stimulus,condition,repeat):
