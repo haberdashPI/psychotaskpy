@@ -15,7 +15,14 @@ def blocked_run(env,stimulus,sid,group,phase,condition,start_block,num_blocks):
 
     @lru_cache(maxsize=None)
     def generate(*params):
-        return as_sound(stimulus['generate_tones'](env,stimulus,condition,*params))
+        result = stimulus['generate_sound'](env,stimulus,condition,*params)
+        # generate_sound can return additional values as part of the stimulus
+        # generation (for instance to provide ground truth information relevant
+        # to that stimulu).
+        if isinstance(result,tuple):
+            return (as_sound(result[0]),) + result[1:]
+        else:
+            return as_sound(result)
     stimulus['generate'] = generate
     
     info = {}
