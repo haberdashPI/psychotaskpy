@@ -57,7 +57,7 @@ stimulus = {'atten_dB': atten,
 def us_to_phase(us,freq):
     return 2*pi * us/10**6 * freq
 
-def generate_tones(env,stimulus,condition,delta):
+def generate_sound(env,stimulus,condition,delta):
     cond = stimulus['conditions'][condition]
 
     if cond['type'] == 'ILD':
@@ -96,7 +96,7 @@ def generate_tones(env,stimulus,condition,delta):
 
     else:
         raise RuntimeError('Unknown stimulus type: ' + cond['type'])
-stimulus['generate_tones'] = generate_tones
+stimulus['generate_sound'] = generate_sound
 
 def generate_adapter(env,stimulus,condition):
     cond = stimulus['conditions'][condition]
