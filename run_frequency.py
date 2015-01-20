@@ -1,3 +1,4 @@
+
 from util import *
 import glob
 import adapters
@@ -20,7 +21,8 @@ print "Using attenuation of ",atten
 env = {'title': 'Frequency Discrimination',
        'debug': False,
        'sample_rate_Hz': 44100,
-       'groups': ['Day1','F_50ms','F30Ps_50ms','F30Pd_50ms','PF_50ms','FD_50ms','fs30Pd_50ms'],
+       'groups': ['Day1','F_50ms','F30Ps_50ms','F30Pd_50ms','PF_50ms',
+                  'FD_50ms','fs30Pd_50ms'],
        'default_blocks': 6,
        'data_file_dir': '../data',
        'num_trials': 60,
@@ -39,11 +41,14 @@ stimulus = {'atten_dB': atten,
             'question': 'lower in frequency',
             'condition_order': ['f1k50ms','f1k100ms','f4k50ms'],
             'conditions':
-            {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000, 'example_delta': 100},
-             'f1k100ms': {'length_ms': 100, 'frequency_Hz': 1000,'example_delta': 100},
-             'f4k50ms': {'length_ms': 100, 'frequency_Hz': 4000, 'example_delta': 100}}}
+            {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
+                         'example_delta': 100},
+             'f1k100ms': {'length_ms': 100, 'frequency_Hz': 1000,
+                          'example_delta': 100},
+             'f4k50ms': {'length_ms': 100, 'frequency_Hz': 4000,
+                         'example_delta': 100}}}
 
-def generate_tones(env,stimulus,condition,delta):
+def generate_sound(env,stimulus,condition,delta):
     cond = stimulus['conditions'][condition]
 
     beep = tone(cond['frequency_Hz'] - delta,
@@ -57,7 +62,7 @@ def generate_tones(env,stimulus,condition,delta):
 
     return left(np.vstack([beep,space,beep])).copy()
 
-stimulus['generate_tones'] = generate_tones
+stimulus['generate_sound'] = generate_sound
 
 def generate_adapter(env,stimulus,condition):
     freq = stimulus['conditions'][condition]['frequency_Hz']
