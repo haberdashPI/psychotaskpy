@@ -45,7 +45,7 @@ stimulus = {'atten_dB': atten,
              'd4k50ms': {'length_ms': 100, 'frequency_Hz': 4000,
                          'example_delta': 100}}}
 
-def generate_tones(env,stimulus,condition,delta):
+def generate_sound(env,stimulus,condition,delta):
     cond = stimulus['conditions'][condition]
 
     beep = tone(cond['frequency_Hz'],
@@ -61,7 +61,7 @@ def generate_tones(env,stimulus,condition,delta):
 
     return stim.copy()
 
-stimulus['generate_tones'] = generate_tones
+stimulus['generate_sound'] = generate_sound
 
 def generate_adapter(env,stimulus,condition):
     length = stimulus['conditions'][condition]['length_ms']
