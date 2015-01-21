@@ -1,63 +1,84 @@
-import motor
-import time
+################################################################################
 from util import *
-from psychopy.visual import Window, TextStim
-from psychopy.core import wait
-from psychopy.gui import DlgFromDict
+import glob
+import adapters
+import experiment
+import phase
 
-stimulus = {}
-env = {}
-run = True
+# setup the types of phases we want to use
+import motor
+import passive
 
-env = {'debug': False,
+phases = ['motor_synch','motor_monitor']
+
+env = {'title': 'Motor Synchronization',
+       'use_response_pad': True,
+       'countdown_interval': 750,
+       'countdown_length': 3,
+       'debug': False,
        'sample_rate_Hz': 44100,
-       'data_file_dir': 'data',
-       'continuation_ms': 47000, #47000,
-       'n_synch': 6} # 6
+       'groups': ['Test'],
+       'default_blocks': 6,
+       'data_file_dir': '../data'}
     
-rhythm = 'A'
+rhythm = 'A2'
+intervals = {'A':  [107, 429, 214, 1065, 536, 643, 321, 857],
+             'A2': [640, 160, 560, 960, 320, 400, 240, 720],
+             'B2': [320, 1040, 800, 160, 240, 400, 480, 560]}
+
 stimulus = {'atten_dB': 20,
-         'freq_Hz': 250,
-         'beep_ms': 25,
-         'ramp_ms': 5,
-         'intervals': rhythm_intervals(rhythm)}
+            'freq_Hz': 250,
+            'beep_ms': 25,
+            'ramp_ms': 10,
+            'instructions': 'Tap along to the rhythm you hear. '+
+                 'Continue to repeat the rhythm once the sound stops. ',
+            'intervals': intervals[rhythm],
+            'continuation_ms': 47000,
+            'n_synch': 6,
+            'condition_order': ['rhythm A','rhtyhm A2','rhythm B2'],
+            'random_seeds': [ 1986, 31051,  6396, 21861, 15014,  1988,  2051,
+                              27160, 17545, 21009 ],
+            'monitor_instructions': 'Tap the bottom left button whenever you '+
+                                    'hear a deviation from the rhythm.',
+            'n_monitor': 8,
+            'n_deviants': 3,
+            'n_deviant_wait': 2,
+            'deviant_ms': 200}
 
-def create_window(env):
-    if env['debug']:
-        win = Window([400,400])
-        win.setMouseVisible(False)
-        return win
+def generate_sound(env,stimulus,condition,repeat=1,random_seed=None):
+    beep = tone(stimulus['freq_Hz'],stimulus['beep_ms'],
+                stimulus['atten_dB'],stimulus['ramp_ms'],
+                env['sample_rate_Hz'])
+
+    intervals,deviants = generate_intervals_and_deviants(stimulus,repeat,random_seed)
+
+    sound = beep.copy()
+    for interval in intervals:
+        sound = np.vstack([sound, silence(interval,env['sample_rate_Hz']), beep.copy()])
+
+    return sound,deviants
+stimulus['generate_sound'] = generate_sound
+
+def generate_intervals_and_deviants(stimulus,repeat,random_seed):
+    rhythm_N = len(stimulus['intervals'])
+    intervals = np.tile(stimulus['intervals'],repeat)
+    
+    if random_seed is None:
+        return intervals,[]
+
     else:
-        win = Window(fullscr=True)
-        win.setMouseVisible(False)
-        return win
+        with RandomSeed(random_seed):
+            n_deviants = np.random.randint(stimulus['n_deviants']+1)
+            deviant_indices = np.random.random_integers(rhythm_N*stimulus['n_deviant_wait'],
+                                                        rhythm_N*stimulus['n_monitor']-1,
+                                                        size=n_deviants)
+            deviant_dirs = np.random.choice([-1,1],n_deviants)
 
-def blocked_motor(sid,group,phase,start_block,num_blocks):
-    env['win'] = create_window(env)
-    env['num_blocks'] = num_blocks
-    try: 
-        info = {}
-        info['sid'] = sid
-        info['group'] = group
-        info['phase'] = phase
-        info['rhythm'] = rhythm
-        info_order = ['sid','group','phase','rhythm']
-        
-        TextStim(env['win'],text='Tapping Task')
-        wait(3.0)
-        
-        dfile = unique_file(env['data_file_dir'] + '/' + sid + '_' +
-                            time.strftime("%Y_%m_%d_") + phase + "_%02d.dat")
-        
-        motor.run(env,stimulus,LineWriter(dfile,info,info_order))
-    finally:
-        env['win'].close()
-        
-if run:
-    setup = {'User ID': '0000', 'Group': 'pilot', 'Phase': 'test',
-            'Blocks': 1, 'Start Block': 0}
-    dialog = DlgFromDict(dictionary=setup,title='Rhythm Discrimination',
-                        order=['User ID','Group','Phase','Blocks','Start Block'])
-    if dialog.OK:
-        blocked_motor(setup['User ID'],setup['Group'],setup['Phase'],
-                      setup['Start Block'],setup['Blocks'])
+        # deviate events, possibly changing the order if the
+        # difference is greater than the interval separating two events.
+        events = np.cumsum(intervals)
+        events[deviant_indices] += deviant_dirs*stimulus['deviant_ms']
+        intervals = np.ediff1d(np.sort(events),to_begin=events[0])
+        return intervals,events[deviant_indices]
+
+experiment.start(env,stimulus,phases)

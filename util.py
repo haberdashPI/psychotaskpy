@@ -2,6 +2,8 @@ import os
 from math import pi
 import numpy as np
 
+MESSAGE_DIMS = (1000,400)
+
 class Info:
     pass
 
@@ -47,10 +49,6 @@ def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz,phase=0):
 
     return np.vstack([xs, xs]).T
 
-def rhythm_intervals(interval):
-    if interval == 'A': return [107, 429, 214, 1065, 536, 643, 321, 857]
-    else: raise Warning('No interval "'+interval+'" found.')
-
 def unique_file(filename_pattern):
     index = 0
     fname = filename_pattern % index
@@ -59,7 +57,7 @@ def unique_file(filename_pattern):
         fname = filename_pattern % index
     return fname
 
-def nth_file(i,filename_pattern,give_up_after=10):
+def nth_file(i,filename_pattern,give_up_after=10,wrap_around=False):
     index = 0
     count = 0
     fname = filename_pattern % index
@@ -74,9 +72,20 @@ def nth_file(i,filename_pattern,give_up_after=10):
     if os.path.exists(fname):
         return fname
     else:
+        if wrap_around and i > 0:
+            return nth_file(i % (count+1),filename_pattern,give_up_after)
         raise RuntimeError(("Could not find the Nth file (N=%d) with pattern: '" % (i+1) +
                            filename_pattern + "'"))
 
+class RandomSeed():
+    def __init__(self,seed):
+        self.seed = seed
+    def __enter__(self):
+        self.state = np.random.get_state()
+        np.random.seed(self.seed)
+    def __exit__(self,type,value,traceback):
+        np.random.set_state(self.state)
+        
 class LineWriter:
     def __init__(self,filename,info,info_order):
         self.info = info

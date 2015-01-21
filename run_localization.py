@@ -1,10 +1,13 @@
-from psychopy.sound import Sound
-from psychopy.gui import DlgFromDict
 from util import *
 import glob
 import adapters
+import experiment
 
-run = True
+# setup the types of phases we want to use
+import twoAFC
+import passive
+
+phases = ['2AFC','passive_today','passive_static']
 
 booth_atten = \
     {'corner': {'right': 45.3, 'left': 43.6}, # calibrated on 09-15-14
@@ -14,20 +17,16 @@ booth_atten = \
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
-setup = {'User ID': '0000',
-         'Group': ['Day1','A','P','A_3hP','L30TLp','L24LToff'],
-         'Phase': ['train','passive_today'],
-         'Condition': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB','ITD_500Hz0us','ITD_500Hz200us'],
-         'Blocks': 5, 'Start Block': 0,
-         'Starting Level': 0}
-setup_order=['User ID','Group','Phase','Condition',
-             'Blocks','Start Block', 'Starting Level'])
-
-env = {'debug': False,
+env = {'title': 'Frequency Discrimination',
+       'debug': False,
        'sample_rate_Hz': 44100,
        'data_file_dir': '../data',
        'num_trials': 60,
+       'default_blocks': 5,
        'feedback_delay_ms': 400,
+       'groups': ['Day1','A','P','A_3hP','L30TLp','L24LToff'],
+       'fields': {'Starting Level': 6},
+       'field_order': ['Starting Level'],
        'offset_stimulus_text': False}
 
 stimulus = {'atten_dB': atten, 
@@ -39,6 +38,8 @@ stimulus = {'atten_dB': atten,
             'example_signal': 'Sound more to the right',
             'instructions': 'You will be listening for the sound to your right ear.',
             'question': 'to the right',
+            'condition_order': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB',
+                                'ITD_500Hz0us','ITD_500Hz200us'],
             'conditions':
             {'ILD_4k0dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 0,
                             'type': 'ILD','example_delta': 8},
@@ -56,7 +57,7 @@ stimulus = {'atten_dB': atten,
 def us_to_phase(us,freq):
     return 2*pi * us/10**6 * freq
 
-def generate_tones(stimulus,env,condition,delta):
+def generate_sound(env,stimulus,condition,delta):
     cond = stimulus['conditions'][condition]
 
     if cond['type'] == 'ILD':
@@ -73,7 +74,7 @@ def generate_tones(stimulus,env,condition,delta):
                             stimulus['ramp_ms'],
                             env['sample_rate_Hz']))
 
-        return Sound((left_tone + right_tone).copy())
+        return (left_tone + right_tone).copy()
 
     elif cond['type'] == 'ITD':
         delta = delta + cond['offset_us']
@@ -91,32 +92,23 @@ def generate_tones(stimulus,env,condition,delta):
                             env['sample_rate_Hz'],
                             phase = +us_to_phase(delta,cond['frequency_Hz'])/2))
 
-        return Sound((left_tone + right_tone).copy())
+        return (left_tone + right_tone).copy()
 
     else:
         raise RuntimeError('Unknown stimulus type: ' + cond['type'])
-stimulus['generate_tones'] = generate_tones
+stimulus['generate_sound'] = generate_sound
 
-def generate_adapter(stimulus,condition):
+def generate_adapter(env,stimulus,condition):
     cond = stimulus['conditions'][condition]
     if cond['type'] == 'ILD':
-        return adapters.Stepper(start=setup['Starting Level'],
+        return adapters.Stepper(start=env['fields']['Starting Level'],
                             bigstep=0.5,littlestep=0.25,
                             down=3,up=1,min_delta=0)
     elif cond['type'] == 'ITD':
-        return adapters.Stepper(start=setup['Starting Level'],
+        return adapters.Stepper(start=env['fields']['Starting Level'],
                     bigstep=10**0.2,littlestep=10**0.05,
                     down=3,up=1,min_delta=1,mult=True)
 
 env['generate_adapter'] = generate_adapter
 
-dialog = DlgFromDict(dictionary=setup,title='ILD',order=setup_order)
-
-from run_blocks import *
-# NOTE: we do not import run_blocks until later because of a bug in pscyhopy
-# that requires we create the dialog before importing other gui components.
-
-if run and dialog.OK:
-    blocked_run(setup['User ID'],setup['Group'],setup['Phase'],
-                setup['Condition'],setup['Start Block'],setup['Blocks'],
-                stimulus,env)
+experiment.start(env,stimulus,phases)
