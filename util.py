@@ -77,6 +77,15 @@ def nth_file(i,filename_pattern,give_up_after=10,wrap_around=False):
         raise RuntimeError(("Could not find the Nth file (N=%d) with pattern: '" % (i+1) +
                            filename_pattern + "'"))
 
+class RandomSeed():
+    def __init__(self,seed):
+        self.seed = seed
+    def __enter__(self):
+        self.state = np.random.get_state()
+        np.random.seed(self.seed)
+    def __exit__(self,type,value,traceback):
+        np.random.set_state(self.state)
+        
 class LineWriter:
     def __init__(self,filename,info,info_order):
         self.info = info
