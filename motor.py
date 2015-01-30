@@ -13,28 +13,55 @@ KEYBOARD_TRIGGER = pygame.locals.K_SPACE
 NANO_TRIGGER = 36 #(far left, bottom button)
 
 @phase('motor_synch')
-def run_blocks(env,stimulus,condition,block,is_start,write_line):
+def run_synch(env,stimulus,condition,block,is_start,write_line):
     if is_start:
-        ex.stimuli.TextBox(stimulus['instructions'],util.MESSAGE_DIMS).present()
+        ex.stimuli.TextBox(stimulus['instructions']['motor_synch'],
+                           util.MESSAGE_DIMS).present()
         env['exp'].keyboard.wait()
 
         ex.stimuli.TextLine('Loading...').present()
         # pregenerate stimuli (results will be cached for future use)
-        stimulus['generate'](stimulus['n_synch'])
+        rhythm = stimulus['generate'](stimulus['n_repeats']['motor_synch'])
         env['exp'].screen.clear()
 
-    run(env,stimulus,block,write_line)
+    run(env,stimulus,condition,rhythm,[],'motor_synch',block,write_line)
 
 @phase('motor_monitor')
 def run_monitor(env,stimulus,condition,block,is_start,write_line):
     if is_start:
-        ex.stimuli.TextBox(stimulus['monitor_instructions'],util.MESSAGE_DIMS).present()
+        ex.stimuli.TextBox(stimulus['instructions']['motor_monitor'],
+                           util.MESSAGE_DIMS).present()
         env['exp'].keyboard.wait()
 
         # stimuli must be generated for each block
 
-    monitor(env,stimulus,block,write_line)
+    # load the intervals 
+    ex.stimuli.TextLine('Loading...').present()
+    rhythm,deviants = \
+        stimulus['generate'](stimulus['n_repeats']['motor_monitor'],
+                             stimulus['n_deviant_wait']['motor_monitor'],
+                             stimulus['random_seeds'][block])
+
+    run(env,stimulus,condition,rhythm,deviants,'motor_monitor',block,write_line)
         
+@phase('motor_mixed')
+def run_mixed(env,stimulus,condition,block,is_start,write_line):
+    if is_start:
+        ex.stimuli.TextBox(stimulus['instructions']['motor_mixed'],
+                           util.MESSAGE_DIMS).present()
+        env['exp'].keyboard.wait()
+
+        # stimuli must be generated for each block
+
+    # load the intervals 
+    ex.stimuli.TextLine('Loading...').present()
+    rhythm,deviants = \
+        stimulus['generate'](stimulus['n_repeats']['motor_mixed'],
+                             stimulus['n_deviant_wait']['motor_mixed'],
+                             stimulus['random_seeds'][block])
+
+    run(env,stimulus,condition,rhythm,deviants,'motor_mixed',block,write_line)
+    
 
 # KeyboardResponder is used for debugging purposes when the nanopad is
 # unavailable. It will not provide reliable timing results.
@@ -142,66 +169,7 @@ class ResponseCollector:
         else:
             return []
 
-def run(env,stimulus,block,write_line):
-    env['exp'].screen.clear()
-
-    if env['use_response_pad']:
-        start_message = \
-            ex.stimuli.TextBox('Press bottom left button to begin.',util.MESSAGE_DIMS)                                       
-    else:
-        start_message = \
-          ex.stimuli.TextBox('Press spacebar to begin.',util.MESSAGE_DIMS)
-          
-    countdown = [ex.stimuli.TextLine(str(i)) for i in
-                 range(env['countdown_length'],0,-1)]
-    go_text = ex.stimuli.TextLine('Go!')
-    for c in countdown: c.preload()
-    go_text.preload()
-
-    env['exp'].screen.clear()
-    rhythm = stimulus['generate'](stimulus['n_synch'])
-    
-    if env['use_response_pad']:
-        responder = NanopadResponder()
-    else:
-        responder = KeyboardResponder(env['exp'])
-
-    start_message.present()
-    with responder as r:
-        # note the time
-        timestamp = datetime.datetime.now()
-
-        # give a countdown
-        for c in countdown:
-            c.present()
-            env['exp'].clock.wait(env['countdown_interval'])
-        go_text.present()
-
-        # start playing the sound
-        listen_time = rhythm.get_length()*1000 + \
-          env['countdown_interval']*env['countdown_length'] +\
-          stimulus['continuation_ms']
-        rhythm.play()
-
-        # keep the go_text up for a while
-        env['exp'].clock.wait(500)
-        env['exp'].screen.clear()
-        env['exp'].screen.update()
-
-        # record all user taps to a file
-        for i in range(int(np.ceil(listen_time / 500.0))):
-            for time,pressure in r.collect_events(500):
-                write_line({'time': time - env['countdown_interval']*env['countdown_length'],
-                            'pressure': pressure,
-                            'block_timestamp': timestamp},
-                            ['time','pressure','block_timestamp'])
-    
-def monitor(env,stimulus,block,write_line):
-    # load the intervals 
-    ex.stimuli.TextLine('Loading...').present()
-    rhythm,deviants = \
-        stimulus['generate'](stimulus['n_monitor'],stimulus['random_seeds'][block])
-
+def run(env,stimulus,condition,rhythm,deviants,phase,block,write_line):
     env['exp'].screen.clear()
 
     # provide start prompt
@@ -219,10 +187,12 @@ def monitor(env,stimulus,block,write_line):
     for c in countdown: c.preload()
     go_text.preload()
 
+    message_text = ex.stimuli.TextLine(stimulus['timed_message'][phase][0])
+
     env['exp'].screen.clear()
 
     ###############
-    # record user specified deviants
+    # record user responses
     if env['use_response_pad']:
         responder = NanopadResponder()
     else:
@@ -241,42 +211,52 @@ def monitor(env,stimulus,block,write_line):
 
         # start playing the sound
         rhythm.play()
-        listen_time = rhythm.get_length()*1000 + \
-          env['countdown_interval']*env['countdown_length']
+        listen_time_ms = rhythm.get_length()*1000 + \
+          env['countdown_interval']*env['countdown_length'] +\
+          stimulus['continuation_ms'][phase]
 
-        # keep the go_text up for a while
+        # keep the go_text (signalling that the sound is playing) up for a while
         env['exp'].clock.wait(500)
         env['exp'].screen.clear()
         env['exp'].screen.update()
 
-        # record all user taps to a file
-        for i in range(int(np.ceil(listen_time / 500.0))):
-            for time,pressure in r.collect_events(500):
+        intervals = stimulus['intervals_ms'][condition]
+        rhythm_ms = sum(intervals)
+        wait_time_ms = rhythm_ms / len(intervals)
 
-                # provide an oportunity to exit/pause the program
-                env['exp'].keyboard.check()
-
+        # record all motor events shortly after they are placed in the queue
+        # (so that if the program crashes we still write most of the event
+        # to a file).
+        for i in range(int(np.ceil(listen_time_ms / wait_time_ms))):
+            # provide an oportunity to exit/pause the program
+            env['exp'].keyboard.check()
+            
+            # if there is a timed message, present it at the appropriate time
+            if i*wait_time_ms > stimulus['timed_message'][phase][1] * rhythm_ms:
+                message_text.present()
+            # clear the timed message ~1000ms after it was displayed
+            if i*wait_time_ms > stimulus['timed_message'][phase][1] * rhythm_ms + 1000:
+                env['exp'].screen.clear()
+                env['exp'].screen.update()
+            
+            for time,pressure in r.collect_events(wait_time_ms):
                 # record button press
-                write_line({'time': time - env['countdown_interval']*env['countdown_length'],
+                write_line({'time': time - \
+                               env['countdown_interval']*env['countdown_length'],
                             'pressure': pressure,
                             'type': 'listener',
                             'block_timestamp': timestamp},
                             ['time','pressure','type','block_timestamp'])
         
     ###############
-    # save all of the actual deviants to the data file
+    # save any deviant tones to the data file
     for time in deviants:
         if dir > 0:
             write_line({'time': time,'pressure': 127, 'type': 'ground_truth',
                         'block_timestamp': timestamp},
                         ['time','pressure','type','block_timestamp'])
 
-    # if there are no deviants its possible there will be no data file,
-    # write a single line indicating that there were deviants by using a negative
-    # time value
-    if len(deviants) == 0:
-        write_line({'time': -1, 'pressure': 0, 'type': 'ground_truth',
-                    'block_timestamp': timestamp},
-                    ['time','pressure','type','block_timestamp'])
-
-    
+    # make sure there is at least one line in the file.
+    write_line({'time': 0, 'pressure': 0, 'type': 'empty',
+                'block_timestamp': timestamp},
+                ['time','pressure','type','block_timestamp'])
