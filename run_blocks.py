@@ -29,7 +29,8 @@ def blocked_run(env,stimulus,sid,group,phase,condition,start_block,num_blocks):
     info['group'] = group
     info['phase'] = phase
     info['stimulus'] = condition
-    info_order = ['sid','group','phase','block','stimulus']
+    info['booth'] = booth()
+    info_order = ['sid','group','booth','phase','block','stimulus']
 
     for block in range(start_block,num_blocks):
         info['block'] = block
