@@ -21,7 +21,7 @@ def run_synch(env,stimulus,condition,block,is_start,write_line):
 
         ex.stimuli.TextLine('Loading...').present()
         # pregenerate stimuli (results will be cached for future use)
-        rhythm = stimulus['generate'](stimulus['n_repeats']['motor_synch'])
+        rhythm,_ = stimulus['generate'](stimulus['n_repeats']['motor_synch'])
         env['exp'].screen.clear()
 
     run(env,stimulus,condition,rhythm,[],'motor_synch',block,write_line)
