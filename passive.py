@@ -59,13 +59,13 @@ def run(env,stimulus,write_line):
     stim_1 = stimulus['generate'](0)
     stim_2 = stimulus['generate'](0)
 
-    env['exp'].clock.wait(1000)
+    env['exp'].clock.wait(1000,env['exp'].keyboard.check)
     
     for trial in range(env['num_trials']):
         # provide an oportunity to exit/pause the program
         env['exp'].keyboard.check()
-        
-        signal_interval = random.randint(0,1)
+        env['exp'].screen.clear()
+        env['exp'].screen.update()    
 
         stim_1.play()
         env['exp'].clock.wait(stimulus['SOA_ms'])
@@ -85,13 +85,18 @@ def run_track(env,stimulus,track,write_line):
     env['exp'].clock.wait(1000)
 
     delays_ms = pd.to_datetime(track.timestamp).diff()
-    # HACK!! (could be broken by an update to numpy)
+    # HACK!! there's no obvious way to convert from timestamps to ms
+    # except by dividing by the unit size manually, if this unit size
+    # changes in a future version of numpy, then this code will no
+    # longer work
     delays_ms = delays_ms.apply(lambda x: x.astype('float64') / 1e6)
     delays_ms[0] = delays_ms.median()
 
     for track_index,track_row in track.iterrows():
         # provide an oportunity to exit/pause the program
         env['exp'].keyboard.check()
+        env['exp'].screen.clear()
+        env['exp'].screen.update()    
 
         signal_interval = track_row['correct_response']
         if signal_interval == 0:
