@@ -7,64 +7,76 @@ import phase
 
 # setup the types of phases we want to use
 import motor
+import responder
 import passive
 
 phases = ['motor_synch','motor_monitor','motor_mixed']
 
 env = {'title': 'Motor Synchronization',
-       'use_response_pad': True,
+       'responder': responder.nanopad,
        'countdown_interval': 750,
        'countdown_length': 3,
-       'debug': False,
+       'debug': True,
        'sample_rate_Hz': 44100,
        'groups': ['Test'],
        'default_blocks': 4,
-       'data_file_dir': '../data'}
+       'data_file_dir': '../data',
+       'program_file_dir': 'program_data'}
     
 stimulus = {'atten_dB': 20,
             'beep_ms': 25,
             'ramp_ms': 10,
-            'instructions': {'motor_synch': 'Tap along to the rhythm you hear. '+
-                                  'Continue to repeat the rhythm once the sound stops. ',
-                             'motor_monitor': 'Tap the bottom left button whenever you '+
-                                    'hear a deviation from the rhythm.',
-                             'motor_mixed': 'Tap along to the rhythm you hear. '+
-                                 'When you see "Stop tapping!", just listen to the rhythm'+
-                                 ' and tap the buton any time you hear a deviation from the'+
-                                 ' rhythm.'},
-            'condition_order': ['A0','A','B','A1k'],                                    
-            'intervals_ms': {'A0':  [107, 429, 214, 1065, 536, 643, 321, 857],
+            'instructions':
+             {'motor_synch': 'Tap along to the rhythm you hear. '+
+              'Continue to repeat the rhythm once the sound stops. ',
+              'motor_monitor': 'Tap the bottom left button whenever you '+
+              'hear a deviation from the rhythm.',
+              'motor_mixed': 'Tap along to the rhythm you hear. '+
+              'When you see "Stop tapping!", just listen to the rhythm'+
+              ' and tap the buton any time you hear a deviation from the'+
+              ' rhythm.'},
+            'condition_order': ['A','B','A1k','A0'],
+            'intervals_ms': {'A0':  [103, 411, 206, 1021, 514, 617, 307, 821],
                             'A':   [640, 160, 560, 960, 320, 400, 240, 720],
                             'A1k': [640, 160, 560, 960, 320, 400, 240, 720],
                             'B':   [320, 1040, 800, 160, 240, 400, 480, 560]},
             'freq_Hz' : {'A0': 250, 'A': 250, 'B': 250, 'A1k': 1000},
-            'continuation_ms': {'motor_synch': 47000, 'motor_monitor': 0, 'motor_mixed': 0},
+            'continuation_ms': {'motor_synch': 47000, 'motor_monitor': 0,
+                                'motor_mixed': 0},
             'random_seeds': [ 1986, 31051,  6396, 21861, 15014,  1988,  2051,
                               27160, 17545, 21009 ],
-            'n_repeats': {'motor_synch': 6, 'motor_monitor': 17, 'motor_mixed': 17},
+            'n_repeats': {'motor_synch': 8, 'motor_monitor': 17,
+                           'motor_mixed': 17},
             'n_deviant_wait': {'motor_monitor': 2, 'motor_mixed': 8},
-            'timed_message': {'motor_synch': ['',0],
-                              'motor_monitor': ['',0],
-                              'motor_mixed': ['Stop tapping!', 6]},
+            'timed_images': {'motor_synch': [('initiate.png',0),
+                                             ('synchronize.png',4000*2),
+                                             ('continue.png',4000*8)],
+                              'motor_monitor': [],
+                              'motor_mixed': []},
             'n_deviants': 3,
             'deviant_ms': 200}
 
-def generate_sound(env,stimulus,condition,repeat=1,deviant_wait=0,random_seed=None):
+def generate_sound(env,stimulus,condition,repeat=1,deviant_wait=0,
+                   random_seed=None):
     beep = tone(stimulus['freq_Hz'][condition],
                 stimulus['beep_ms'],stimulus['atten_dB'],stimulus['ramp_ms'],
                 env['sample_rate_Hz'])
 
-    intervals,deviants = generate_intervals_and_deviants(stimulus,condition,
-                                                         repeat,deviant_wait,random_seed)
+    intervals,deviants = \
+      generate_intervals_and_deviants(stimulus,condition,
+                                      repeat,deviant_wait,random_seed)
 
     sound = beep.copy()
     for interval in intervals:
-        sound = np.vstack([sound, silence(interval,env['sample_rate_Hz']), beep.copy()])
+        sound = np.vstack([sound, silence(interval - stimulus['beep_ms'],
+                                          env['sample_rate_Hz']),
+                           beep.copy()])
 
     return sound,deviants
 stimulus['generate_sound'] = generate_sound
 
-def generate_intervals_and_deviants(stimulus,condition,repeat,deviant_wait,random_seed):
+def generate_intervals_and_deviants(stimulus,condition,repeat,deviant_wait,
+                                    random_seed):
     rhythm_N = len(stimulus['intervals_ms'][condition])
     intervals = np.tile(stimulus['intervals_ms'][condition],repeat)
     
@@ -87,4 +99,5 @@ def generate_intervals_and_deviants(stimulus,condition,repeat,deviant_wait,rando
         intervals = np.ediff1d(events,to_begin=events[0])
         return intervals,events[deviant_indices]
 
-experiment.start(env,stimulus,phases)
+if __name__ == "__main__":
+    experiment.start(env,stimulus,phases)
