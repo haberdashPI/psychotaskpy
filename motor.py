@@ -8,60 +8,24 @@ from phase import phase
 
 @phase('motor_synch')
 def run_synch(env,stimulus,condition,block,is_start,write_line):
-    with env['responder'](env['exp']) as responder:
-        if is_start:
-            ex.stimuli.TextBox(stimulus['instructions']['motor_synch'],
-                               util.MESSAGE_DIMS).present()
-            responder.wait_for_press()
-
-            ex.stimuli.TextLine('Loading...').present()
-
-        # pregenerate stimuli (results will be cached for future use)
-        rhythm,_ = stimulus['generate'](stimulus['n_repeats']['motor_synch'])
-        env['exp'].screen.clear()
-
-        __run(env,stimulus,condition,responder,rhythm,[],'motor_synch',
-              block,write_line)
-
+    setup(env,stimulus,'motor_synch',condition,block,is_start,write_line)
 @phase('motor_monitor')
-def run_monitor(env,stimulus,condition,block,is_start,write_line):
+def run_synch(env,stimulus,condition,block,is_start,write_line):
+    setup(env,stimulus,'motor_monitor',condition,block,is_start,write_line)
+
+def setup(env,stimulus,phase,condition,block,is_start,write_line):
     with env['responder'](env['exp']) as responder:
         if is_start:
-            ex.stimuli.TextBox(stimulus['instructions']['motor_monitor'],
+            ex.stimuli.TextBox(stimulus['instructions'][phase],
                                util.MESSAGE_DIMS).present()
             env['exp'].keyboard.wait()
 
-            # stimuli must be generated for each block
-
         # load the intervals 
         ex.stimuli.TextLine('Loading...').present()
-        rhythm,deviants = \
-            stimulus['generate'](stimulus['n_repeats']['motor_monitor'],
-                                 stimulus['n_deviant_wait']['motor_monitor'],
-                                 stimulus['random_seeds'][block])
+        rhythm,deviants = stimulus['generate'](block)
 
-        __run(env,stimulus,condition,responder,rhythm,deviants,'motor_monitor',
+        __run(env,stimulus,phase,condition,responder,rhythm,deviants,
               block,write_line)
-
-@phase('motor_mixed')
-def run_mixed(env,stimulus,condition,block,is_start,write_line):
-    with env['responder'](env['exp']) as responder:    
-        if is_start:
-            ex.stimuli.TextBox(stimulus['instructions']['motor_mixed'],
-                               util.MESSAGE_DIMS).present()
-            env['exp'].keyboard.wait()
-
-            # stimuli must be generated for each block
-
-        # load the intervals 
-        ex.stimuli.TextLine('Loading...').present()
-        rhythm,deviants = \
-            stimulus['generate'](stimulus['n_repeats']['motor_mixed'],
-                                 stimulus['n_deviant_wait']['motor_mixed'],
-                                 stimulus['random_seeds'][block])
-
-        __run(env,stimulus,condition,responder,rhythm,deviants,
-              'motor_mixed',block,write_line)
 
 def __record_responses(env,timestamp,write_line,events):
     for time,pressure in events:
@@ -72,14 +36,17 @@ def __record_responses(env,timestamp,write_line,events):
                         'block_timestamp': timestamp},
                         ['time','pressure','type','block_timestamp'])
 
-def __run(env,stimulus,condition,responder,rhythm,deviants,phase,block,
+def __run(env,stimulus,phase,condition,responder,rhythm,deviants,block,
           write_line):
     env['exp'].screen.clear()
 
     # figure how long the trial should run
+    if phase == 'motor_monitor': continuation_ms = 0
+    else: continuation_ms = stimulus['continuation_ms']
+
     listen_time_ms = rhythm.get_length()*1000 + \
-      env['countdown_interval']*env['countdown_length'] +\
-      stimulus['continuation_ms'][phase]
+      env['countdown_interval']*env['countdown_length'] + \
+      continuation_ms
 
     # setup start prompt
     start_message = ex.stimuli.TextBox(env['responder'].message,
@@ -93,13 +60,13 @@ def __run(env,stimulus,condition,responder,rhythm,deviants,phase,block,
     # go_text.preload()
 
     # setup stage indicators
-    timed_images = []
-    for i,stim in enumerate(stimulus['timed_images'][phase]):
+    timed_image_stims = []
+    for i,stim in enumerate(stimulus['timed_images'][condition][phase]):
         image = ex.stimuli.Picture(env['program_file_dir'] + '/' + stim[0])
         image.preload()
-        timed_images.append((image,stim[1]))
+        timed_image_stims.append((image,stim[1]))
 
-    timed_images.sort(key=lambda x: x[1])
+    timed_image_stims.sort(key=lambda x: x[1])
         
     # prompt the user
     env['exp'].screen.clear()
@@ -119,7 +86,7 @@ def __run(env,stimulus,condition,responder,rhythm,deviants,phase,block,
 
     # collect all user responses
     callback = lambda es: __record_responses(env,timestamp,write_line,es)
-    with responder.callback(callback) as cb:
+    with responder.callback(callback):
         # start playing the sound
         rhythm.play()
 
@@ -135,14 +102,15 @@ def __run(env,stimulus,condition,responder,rhythm,deviants,phase,block,
         #env['exp'].screen.update()
 
         # present timed images
-        for image,time in timed_images:
+        for image,time in timed_image_stims:
             wait_time = max(0,time - (env['exp'].clock.time - start_time_ms))
             env['exp'].clock.wait(wait_time,
                                   lambda: env['exp'].keyboard.check())
             image.present()
 
         # wait until the experiment is over
-        env['exp'].clock.wait(start_time_ms + listen_time_ms,
+        wait_time = max(0,listen_time_ms - (env['exp'].clock.time - start_time_ms))
+        env['exp'].clock.wait(wait_time,
                               lambda: env['exp'].keyboard.check())
         
     ###############
@@ -160,6 +128,6 @@ def __run(env,stimulus,condition,responder,rhythm,deviants,phase,block,
 
 
     ex.stimuli.TextBox("All done! Please, let the expeirmenter"
-                       " know you are finished.").present()
+                       " know you are finished.",util.MESSAGE_DIMS).present()
     env['exp'].keyboard.clear()
     env['exp'].keyboard.wait()
