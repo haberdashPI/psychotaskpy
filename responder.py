@@ -79,12 +79,8 @@ class _NanopadResponder:
             self.last_message_time += message[1]*1000
             
             if initiate_callback:
-                print "YO!"
                 self.initiate_callback_time = self.last_message_time
 
-            print "----"
-            print "message time: "+str(self.last_message_time)
-            print "callback time: "+str(self.initiate_callback_time)
             return message + (self.last_message_time - self.initiate_callback_time,)
         else: return message
 
@@ -96,7 +92,6 @@ class _NanopadResponder:
 
     def callback(self,fn):
         self._callback_fn = fn
-        print "prepare callback time!"
         self.wait_for_press(True)
         return _ResponderCallback(self)
 
