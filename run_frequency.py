@@ -66,8 +66,10 @@ stimulus['generate_sound'] = generate_sound
 
 def generate_adapter(env,stimulus,condition):
     freq = stimulus['conditions'][condition]['frequency_Hz']
+    min_freq = 300
     return adapters.Stepper(start=0.1*freq,bigstep=2,littlestep=np.sqrt(2),
-                            down=3,up=1,mult=True)
+                            down=3,up=1,mult=True,min_delta = 0,
+                            max_delta = freq - min_freq)
 env['generate_adapter'] = generate_adapter
 
 # only run the expeirment if this file is being called directly
