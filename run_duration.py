@@ -35,7 +35,7 @@ stimulus = {'atten_dB': atten,
             'example_signal': 'Longer sound',
             'instructions': 'You will be listening for the longer sound.',
             'question': 'longer',
-            'question': 'lower in frequency',
+            'question': 'longer',
             'condition_order': ['d1k50ms','d1k100ms','d4k50ms'],
             'conditions':
             {'d1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
@@ -45,27 +45,6 @@ stimulus = {'atten_dB': atten,
              'd4k50ms': {'length_ms': 100, 'frequency_Hz': 4000,
                          'example_delta': 100}}}
 
-<<<<<<< HEAD
-def generate_tones(stimulus,env,condition,delta):
-    cond = stimulus['conditions'][condition]
-    
-    beep = tone(cond['frequency_Hz'],
-                stimulus['beep_ms'],
-                stimulus['atten_dB'],
-                stimulus['ramp_ms'],
-                env['sample_rate_Hz'])
-
-    space = silence(cond['length_ms'] - stimulus['beep_ms'] + delta,
-                    env['sample_rate_Hz'])
-
-    stim = left(np.vstack([beep,space,beep]))
-
-    return Sound(stim.copy())
-
-stimulus['generate_tones'] = generate_tones
-
-def generate_adapter(stimulus,condition):
-=======
 def generate_sound(env,stimulus,condition,delta):
     cond = stimulus['conditions'][condition]
 
@@ -78,31 +57,16 @@ def generate_sound(env,stimulus,condition,delta):
     space = silence(cond['length_ms'] - stimulus['beep_ms'] + delta,
                     env['sample_rate_Hz'])
 
-    stim = left(np.vstack([beep,space,beep]))
-
-    return stim.copy()
+    return left(np.vstack([beep,space,beep])).copy()
 
 stimulus['generate_sound'] = generate_sound
 
 def generate_adapter(env,stimulus,condition):
->>>>>>> expyriment
     length = stimulus['conditions'][condition]['length_ms']
     return adapters.Stepper(start=0.1*length,bigstep=2,littlestep=np.sqrt(2),
-                            down=3,up=1,mult=True)
+                            down=3,up=1,mult=True,min_delta=0,
+							max_delta=stimulus['SOA_ms']/2)
+							
 env['generate_adapter'] = generate_adapter
 
-<<<<<<< HEAD
-dialog = DlgFromDict(dictionary=setup,title='Duration Discrimination',
-                         order=setup_order)
-
-from run_blocks import blocked_run
-# NOTE: we do not import run_blocks until later because of a bug in pscyhopy
-# that requires we create the dialog before importing other gui components.
-
-if run and dialog.OK:
-    blocked_run(setup['User ID'],setup['Group'],setup['Phase'],
-                setup['Condition'],setup['Start Block'],setup['Blocks'],
-                stimulus,env)
-=======
 experiment.start(env,stimulus,phases)
->>>>>>> expyriment
