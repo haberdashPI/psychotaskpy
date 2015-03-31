@@ -46,11 +46,11 @@ def examples(env,stimulus,condition):
         if signal:
             signal_message.present()
             signal_sound.play()
-            env['exp'].clock.wait(stimulus['SOA_ms']) # ? is sound asynchronized? if not I'll have to subtract the sounds length
+            env['exp'].clock.wait(stimulus['SOA_ms'],env['exp'].keyboard.check)
         else:
             standard_message.present()
             standard_sound.play()
-            env['exp'].clock.wait(stimulus['SOA_ms']) # ? is sound asynchronized? if not I'll have to subtract the sounds length
+            env['exp'].clock.wait(stimulus['SOA_ms'],env['exp'].keyboard.check)
 
 def run(env,stimulus,write_line):
     if 'offset_stimulus_text' not in env or env['offset_stimulus_text']:
@@ -81,6 +81,8 @@ def run(env,stimulus,write_line):
     env['exp'].keyboard.wait()
 
     for trial in range(env['num_trials']):
+        env['exp'].keyboard.check()
+
         signal_interval = random.randint(0,1)
 
         if signal_interval == 0:
@@ -103,10 +105,16 @@ def run(env,stimulus,write_line):
           stimulus['response_delay_ms']
         env['exp'].clock.wait(delay_ms)
         
-        query_message.present()
-        
-        response,rt = \
-          env['exp'].keyboard.wait_char([response_1,response_2])
+        response = None
+        while response is None:
+            query_message.present()
+
+            # response may come back None if user asks to quit and then
+            # cancels, requiring us to poll for a response again
+            response,rt = \
+                env['exp'].keyboard.wait_char([response_1,response_2])
+            
+
         rt += stimulus['response_delay_ms']
         response = int(response == response_2)
 
