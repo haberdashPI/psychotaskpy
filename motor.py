@@ -22,7 +22,7 @@ def setup(env,stimulus,phase,condition,block,is_start,write_line):
 
         # load the intervals 
         ex.stimuli.TextLine('Loading...').present()
-        rhythm,deviants = stimulus['generate'](block)
+        rhythm,deviants = stimulus['generate'](block,phase)
 
         __run(env,stimulus,phase,condition,responder,rhythm,deviants,
               block,write_line)
