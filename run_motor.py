@@ -18,18 +18,24 @@ env = {'title': 'Motor Synchronization',
        'responder': responder.nanopad,
        'countdown_interval': 750,
        'countdown_length': 3,
-       'debug': True,
+       'debug': False,
        'sample_rate_Hz': 44100,
        'groups': ['Test'],
-       'default_blocks': 4,
+       'default_blocks': 10,
        'data_file_dir': '../data',
        'response_window': 1000,
        'program_file_dir': 'program_data'}
 
-instructions ={'motor_synch': 'Tap along to the rhythm you hear during synchronization. '+
-                    'Continue to repeat the rhythm once the sound stops. ',
-               'motor_monitor': 'Tap the bottom left button whenever you '+
-                    'hear a deviation from the rhythm during the monitor phase.'}
+instructions ={'motor_synch': 
+               '1. During the Listen phase: listen to the rhythm that you hear;'+
+               ' do not press any buttons.\n\n'+
+               '2. During the Tap phase: tap as best you can to the rhyhtm.\n\n'+
+               '3. During the Keep Tapping phase: the rhythm will stop playing. Please continue tapping to the rhythm.',
+               'motor_monitor':
+               '1. During the Listen phase: listen to the rhythm that you hear;'+
+               ' do not press any buttons.\n\n'+
+               '2. During the Monitor phase: tap the button whenever the rhythm'+
+               ' differs from the rhythm you first heard.'}
 
 timed_images = {'motor_synch': [('initiate.png',0),
                                 ('synchronize.png',4000*2),
@@ -56,9 +62,12 @@ stimulus = {'atten_dB': 20,
             'n_deviants': 3,
             'deviant_ms': 200}
 
-def generate_sound(env,stimulus,condition,block):
+def generate_sound(env,stimulus,condition,block,phase):
     repeat = stimulus['n_repeats']
-    random_seed = stimulus['random_seeds'][block]
+
+    if phase == 'motor_monitor':
+        random_seed = stimulus['random_seeds'][block]
+    else: random_seed = None
     
     intervals,deviants = \
       generate_intervals_and_deviants(stimulus,condition,repeat,random_seed)
