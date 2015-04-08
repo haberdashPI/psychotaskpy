@@ -21,8 +21,8 @@ print "Using attenuation of ",atten
 env = {'title': 'Frequency Discrimination',
        'debug': False,
        'sample_rate_Hz': 44100,
-       'groups': ['Day1','F_50ms','F30Ps_50ms','F30Pd_50ms','PF_50ms',
-                  'FD_50ms','fs30Pd_50ms'],
+       'groups': ['Day1','fs_50ms','F_50ms','F30Ps_50ms','F30Pd_50ms','FD_50ms',
+                  'fs30Pd_50ms'],
        'default_blocks': 6,
        'data_file_dir': '../data',
        'num_trials': 60,
@@ -66,8 +66,10 @@ stimulus['generate_sound'] = generate_sound
 
 def generate_adapter(env,stimulus,condition):
     freq = stimulus['conditions'][condition]['frequency_Hz']
+    min_freq = 300
     return adapters.Stepper(start=0.1*freq,bigstep=2,littlestep=np.sqrt(2),
-                            down=3,up=1,mult=True)
+                            down=3,up=1,mult=True,min_delta = 0,
+                            max_delta = freq - min_freq)
 env['generate_adapter'] = generate_adapter
 
 # only run the expeirment if this file is being called directly
