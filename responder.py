@@ -6,11 +6,11 @@ import numpy as np
 
 def nanopad(exp):
     return _ResponderContext(_NanopadResponder())
-# def keyboard(exp):
-#     return _ResponderContext(_KeyboardResponder(exp))
+def keyboard(exp):
+    return _ResponderContext(_KeyboardResponder(exp))
 
 nanopad.message = 'Press bottom left button to begin.'
-#keyboard.message = 'Press spacebar to begin.'
+keyboard.message = 'Press spacebar to begin.'
 
 class _ResponderContext:
     def __init__(self,responder):
@@ -24,43 +24,43 @@ class _ResponderContext:
 KEY_UP_CODE = 128
 KEY_DOWN_CODE = 144
 CLOCK_RESET_CODE = 250
-#KEYBOARD_TRIGGER = pygame.locals.K_SPACE
+KEYBOARD_TRIGGER = pygame.locals.K_SPACE
 NANO_TRIGGER = 36 #(far left, bottom button)
 
 # KeyboardResponder is used for debugging purposes when the nanopad is
 # unavailable. It will not provide reliable timing results.
-# class _KeyboardResponder:
-#     def __init__(self,exp,key = KEYBOARD_TRIGGER):
-#         self.key = key
-#         self.exp = exp
+class _KeyboardResponder:
+    def __init__(self,exp,key = KEYBOARD_TRIGGER):
+        self.key = key
+        self.exp = exp
         
-#     def _on_enter(self):
-#         pass
-#     def _on_exit(self):
-#         pass
+    def _on_enter(self):
+        pass
+    def _on_exit(self):
+        pass
 
-#     def __translate_key(self,key):
-#         return [[KEY_DOWN_CODE,key,0],0.5]
+    def __translate_key(self,key):
+        return [[KEY_DOWN_CODE,key,0],0.5]
 
-#     def callback(self,fn):
-#         self.callback = fn
-#         return _ResponseCollector(self)
+    def callback(self,fn):
+        self.callback = fn
+        return _ResponderCallback(self)
 
-#     def wait_for_press(self):
-#         waiter = ex.misc.Clock()
-#         key,_ = self.exp.keyboard.wait()
-#         while key is not self.key:
-#             key,_ = self.exp.keyboard.wait()
-#             waiter.wait(10)
+    def wait_for_press(self):
+        waiter = ex.misc.Clock()
+        key,_ = self.exp.keyboard.wait()
+        while key is not self.key:
+            key,_ = self.exp.keyboard.wait()
+            waiter.wait(10)
         
-#     def collect_messages(self):
-#         keys = []
-#         key = self.exp.keyboard.check(self.key)
-#         while key is not None:
-#             keys.append(key)
-#             key = self.exp.keyboard.check(self.key)
+    def collect_messages(self):
+        keys = []
+        key = self.exp.keyboard.check(self.key)
+        while key is not None:
+            keys.append(key)
+            key = self.exp.keyboard.check(self.key)
 
-#         return map(self.__translate_key,keys)
+        return map(self.__translate_key,keys)
 
 class _NanopadResponder:
     def __init__(self,key = NANO_TRIGGER):
