@@ -1,6 +1,6 @@
 import expyriment as ex
 import threading
-import rtmidi
+import rtmidi_python
 import pygame
 import numpy as np
 
@@ -64,7 +64,7 @@ NANO_TRIGGER = 36 #(far left, bottom button)
 
 class _NanopadResponder:
     def __init__(self,key = NANO_TRIGGER):
-        self.dev = rtmidi.MidiIn(queue_size_limit=2**12)
+        self.dev = rtmidi_python.MidiIn(queue_size_limit=2**12)
         self.key = key
         self.clock = ex.misc.Clock()
         self.last_message_time = 0
@@ -72,6 +72,8 @@ class _NanopadResponder:
 
     def __get_message(self,initiate_callback=False):
         message = self.dev.get_message()
+        if message[0] is None and message[1] is None:
+            message = None
         # this is not perfect but it will provide a ballpark estimate of
         # the start time
         message_time = self.clock.time
