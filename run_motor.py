@@ -15,7 +15,7 @@ import passive
 phases = ['motor_synch','motor_monitor']
 
 env = {'title': 'Motor Synchronization',
-       'responder': responder.nanopad,
+       'responder': responder.keyboard,
        'countdown_interval': 750,
        'countdown_length': 3,
        'debug': False,

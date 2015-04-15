@@ -127,7 +127,6 @@ def __run(env,stimulus,phase,condition,responder,rhythm,deviants,block,
                 ['time','pressure','type','block_timestamp'])
 
 
-    ex.stimuli.TextBox("All done! Please, let the expeirmenter"
-                       " know you are finished.",util.MESSAGE_DIMS).present()
+    ex.stimuli.TextBox("Trial complete. Hit any key to continue.",util.MESSAGE_DIMS).present()
     env['exp'].keyboard.clear()
     env['exp'].keyboard.wait()
