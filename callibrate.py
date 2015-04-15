@@ -1,20 +1,24 @@
-from psychopy.gui import DlgFromDict
 from util import *
-from psychopy.sound import Sound
-from psychopy.core import *
+import pygame
+import pygame.mixer as mix
+import sys
 
-setup = {'frequency': [1000,4000],'attenuation': 0,'ear': ['left','right']}
-dialog = DlgFromDict(dictionary=setup,title='Calibration',
-            order=['frequency','attenuation','ear'])
-if dialog.OK:
-    print setup['attenuation']
-    if setup['ear'] == 'left':
-        beep = left(tone(float(setup['frequency']),5000,setup['attenuation'],5,44100))
-    else:
-        beep = right(tone(float(setup['frequency']),5000,setup['attenuation'],5,44100))
-    sound = Sound(beep.copy())
-    sound.play()
-    wait(5,5)
+if len(sys.argv) >= 4:
+    atten = int(sys.argv[1])
+    freq = int(sys.argv[2])
+    length = int(sys.argv[3])
+    side = sys.argv[3]
+else:
+    atten = 20
+    freq = 1000
+    length = 1000
+    side = 'left'
 
-# left attenuation: 46.7
-# right attenuation: 47.8
+pygame.init()
+
+if side == 'left':
+    floats = left(tone(freq,length,atten,5,44100))
+else:
+    floats = right(tone(freq,length,atten,5,44100))
+sound = mix.Sound(np.asarray(floats*(2**15),'int16'))
+sound.play()
