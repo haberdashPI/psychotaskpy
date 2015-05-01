@@ -163,8 +163,7 @@ def run(env,stimulus,write_line):
     else:
         ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f%%\n'
                            '(Hit any key to continue)' %
-                            (adapter.estimate(),
-                             100.0*(adapter.estimate_sd()-1)),
+                            (adapter.estimate(),adapter.estimate_sd()),
                              util.MESSAGE_DIMS).present()
 
     env['exp'].keyboard.clear()
