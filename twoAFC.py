@@ -26,9 +26,14 @@ def examples(env,stimulus,condition):
                                 '(Hit any key to continue)',util.MESSAGE_DIMS)
     signal_message.preload()
 
+
     standard_sound = stimulus['generate'](0)
-    signal_sound = \
-      stimulus['generate'](stimulus['conditions'][condition]['example_delta'])
+    example_delta = 0
+    try:
+        example_delta = stimulus['conditions'][condition]['example_delta']
+    except:
+        example_delta = stimulus['example_delta']
+    signal_sound = stimulus['generate'](example_delta)
 
     signal = False
 
@@ -53,12 +58,19 @@ def examples(env,stimulus,condition):
             env['exp'].clock.wait(stimulus['SOA_ms'],env['exp'].keyboard.check)
 
 def run(env,stimulus,write_line):
-    if 'offset_stimulus_text' not in env or env['offset_stimulus_text']:
-        stim_1_message = ex.stimuli.TextLine('Sound 1                                                  ')
-        stim_2_message = ex.stimuli.TextLine('                                                  Sound 2')
+    if stimulus.has_key('sound_labels'):
+        sound_1 = stimulus['sound_labels'][0]
+        sound_2 = stimulus['sound_labels'][0]
     else:
-        stim_1_message = ex.stimuli.TextLine('Sound 1')
-        stim_2_message = ex.stimuli.TextLine('Sound 2')
+        sound_1 = 'Sound 1'
+        soudn_2 = 'Sound 2'
+
+    if 'offset_stimulus_text' not in env or env['offset_stimulus_text']:
+        stim_1_message = ex.stimuli.TextLine(sound_1+'                                                  ')
+        stim_2_message = ex.stimuli.TextLine('                                                  '+sound_2)
+    else:
+        stim_1_message = ex.stimuli.TextLine(sound_1)
+        stim_2_message = ex.stimuli.TextLine(sound_2)
         
     stim_1_message.preload()
     stim_2_message.preload()
@@ -72,9 +84,11 @@ def run(env,stimulus,write_line):
     
     adapter = env['adapter']
     
-    query_message = \
-        ex.stimuli.TextLine('Was Sound 1 [Q] or Sound 2 [P] '+
-                            stimulus['question']+'?')
+    query_message_str = ''
+    try: query_message_str = stimulus['full_question']
+    except: query_message_str = 'Was '+sound_1+' [Q] or '+sound_2+'  [P] '+\
+        stimulus['question']+'?'
+    query_message = ex.stimuli.TextLine(query_message_str)
     query_message.preload()
 
     start_message.present()
