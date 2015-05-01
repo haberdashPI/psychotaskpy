@@ -1,3 +1,6 @@
+import scipy
+import scipy.stats
+import pandas as pd
 import numpy as np
 from random import randint
 from math import *
@@ -193,9 +196,80 @@ class MLAdapter:
     def best(self): return max(self.LLs,key=lambda x: x.value)
     
         
-    
+################################################################################
+# Bayesian estimation of slopes from Kontsevich & Tyler
 
+def _log_sum(xs):
+    min_x = np.min(xs)
+    return np.log(np.sum(np.exp(xs - min_x))) + min_x
+
+def _prob_response(correct,x,table):
+
+    L = 1
+    try: L = len(x)
+    except: pass
         
-                                            
-            
+    theta = np.tile(table.theta,(L,1)).T
+    sigma = np.tile(table.sigma,(L,1)).T
+    miss = np.tile(table.miss,(L,1)).T
+
+    N = scipy.stats.norm.cdf(x,loc=theta,scale=sigma)
+    N[np.isnan(N)] = 0.0
+
+    p_correct = miss/2 + (1.0-miss)*N
+    if correct: return p_correct
+    else: return 1-p_correct
+
+def _threshold(table,thresh=0.79):
+    theta = table.theta
+    sigma = table.sigma
+    miss = table.miss
+
+
+    return scipy.stats.norm.ppf((thresh-miss/2)/(1.0-miss/2),
+                                loc=theta,scale=sigma)
+
+class KTAdapter:
+    def __init__(self,start_delta,possible_deltas,log_prior_table):
+        self.possible_deltas = possible_deltas
+        self.table = log_prior_table
+        self.delta = start_delta
+        if not (self.table.columns == 'lp').any():
+            self.table['lp'] = 0
+    def update(self,user_response,correct_response):
+        correct = user_response == correct_response
+
+        # update posterior
+        p = _prob_response(correct,[self.delta],self.table)
+        self.table.lp += np.squeeze(np.log(p))
+        self.table.lp -= _log_sum(self.table.lp)
+
+        # select minimum entropy delta
+        # TODO: figure out why the lowest threshold is always the one chosen
+        p_corrects = _prob_response(True,self.possible_deltas,self.table)
+        p_incorrects = 1-p_corrects
+        pc_norm = np.sum(p_corrects,axis=1)[:,np.newaxis]
+        pi_norm = np.sum(p_incorrects,axis=1)[:,np.newaxis]
+
+        entropy = -np.sum(p_corrects * (np.log(p_corrects) - np.log(pc_norm)) +\
+                          p_incorrects * (np.log(p_incorrects) - np.log(pi_norm)),
+                          axis=0)
+
+        import pdb; pdb.set_trace()
+        self.delta = self.possible_deltas[np.argmin(entropy)]
         
+    def estimate(self):
+        ts = _threshold(self.table)
+        return np.average(ts[~np.isnan(ts)],weights=np.exp(self.table.lp[~np.isnan(ts)]))
+    def estimate_sd(self):
+        ts = _threshold(self.table)
+        ws = np.exp(self.table.lp)
+        thresh = np.average(ts, weights=ws)
+
+        return np.sqrt(np.average((ts-thresh)**2, weights=ws))
+                    
+params = pd.DataFrame({'theta': np.tile(np.linspace(-100,0,10),10),
+                       'sigma': np.repeat(np.linspace(0.2,20,10),10),
+                       'miss': 0.04})
+
+adapt = KTAdapter(-10,np.linspace(-80,0,10),params)
