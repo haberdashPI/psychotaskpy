@@ -11,6 +11,7 @@ phases = ['2AFC','passive_today','passive_static']
 
 booth_atten = {'corner': 27.6, 'left': 25.7, # calibrated on 9-15-14
                'middle': 30.7, # calibrated on 10-14-14
+               'right': 31.1, # calibrated on 04-15-15
                'none': 26}
 
 atten = booth_atten[booth()]
