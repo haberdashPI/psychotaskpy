@@ -1,4 +1,5 @@
-
+import pandas as pd
+import scipy.stats
 from util import *
 import glob
 import adapters
@@ -21,11 +22,10 @@ print "Using attenuation of ",atten
 env = {'title': 'Tone Detection',
        'debug': True,
        'sample_rate_Hz': 44100,
-       'groups': ['Day1','fs_50ms','F_50ms','F30Ps_50ms','F30Pd_50ms','FD_50ms',
-                  'fs30Pd_50ms'],
+       'groups': ['level'],
        'default_blocks': 1,
        'data_file_dir': '../data',
-       'num_trials': 30,
+       'num_trials': 15,
        'feedback_delay_ms': 400}
 
 stimulus = {'atten_dB': atten,
@@ -50,7 +50,7 @@ def generate_sound(env,stimulus,condition,delta):
 
         beep = tone(cond,
                     stimulus['beep_ms'],
-                    stimulus['atten_dB'] + delta,
+                    stimulus['atten_dB'] - delta,
                     stimulus['ramp_ms'],
                     env['sample_rate_Hz'])
 
@@ -61,10 +61,14 @@ def generate_sound(env,stimulus,condition,delta):
 stimulus['generate_sound'] = generate_sound
 
 def generate_adapter(env,stimulus,condition):
-    level = stimulus['conditions'][condition]
-    return adapters.Stepper(start=-10,bigstep=2,littlestep=np.sqrt(2),
-                            down=3,up=1,mult=True,min_delta = -200,
-                            max_delta = 0)
+    params = pd.DataFrame({'theta': np.tile(np.linspace(-200,0,100),50),
+                           'sigma': np.repeat(np.linspace(0.2,100,50),100),
+                           'miss': 0.08})
+
+    params['lp'] = np.log(scipy.stats.norm.pdf(params.theta,loc=0,scale=50)) + \
+        np.log(scipy.stats.norm.pdf(params.sigma, loc=0,scale=50))
+
+    return adapters.KTAdapter(-10,np.linspace(-200,0,100),params)
 
 env['generate_adapter'] = generate_adapter
 
