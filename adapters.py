@@ -245,22 +245,27 @@ class KTAdapter:
         self.table.lp -= _log_sum(self.table.lp)
 
         # select minimum entropy delta
-        # TODO: figure out why the lowest threshold is always the one chosen
         p_corrects = _prob_response(True,self.possible_deltas,self.table)
         p_incorrects = 1-p_corrects
-        pc_norm = np.sum(p_corrects,axis=1)[:,np.newaxis]
-        pi_norm = np.sum(p_incorrects,axis=1)[:,np.newaxis]
+        
+        p_corrects *= np.exp(self.table.lp)[:,np.newaxis]
+        p_c_norm = np.sum(p_corrects,axis=0)
 
-        entropy = -np.sum(p_corrects * (np.log(p_corrects) - np.log(pc_norm)) +\
-                          p_incorrects * (np.log(p_incorrects) - np.log(pi_norm)),
-                          axis=0)
+        p_incorrects *= np.exp(self.table.lp)[:,np.newaxis]
+        p_i_norm = np.sum(p_incorrects,axis=0)
 
-        import pdb; pdb.set_trace()
+        entropy = -np.sum(p_corrects * \
+                          (np.log(p_corrects) - np.log(p_c_norm)),axis=0) + \
+                  -np.sum(p_incorrects * \
+                          (np.log(p_incorrects) - np.log(p_i_norm)),axis=0)
+
+        print entropy
         self.delta = self.possible_deltas[np.argmin(entropy)]
         
     def estimate(self):
         ts = _threshold(self.table)
-        return np.average(ts[~np.isnan(ts)],weights=np.exp(self.table.lp[~np.isnan(ts)]))
+        return np.average(ts[~np.isnan(ts)],
+                          weights=np.exp(self.table.lp[~np.isnan(ts)]))
     def estimate_sd(self):
         ts = _threshold(self.table)
         ws = np.exp(self.table.lp)
@@ -271,5 +276,8 @@ class KTAdapter:
 params = pd.DataFrame({'theta': np.tile(np.linspace(-100,0,10),10),
                        'sigma': np.repeat(np.linspace(0.2,20,10),10),
                        'miss': 0.04})
+
+params['lp'] = np.log(scipy.stats.norm.pdf(params.theta ,loc=0,scale=50)) + \
+   np.log(scipy.stats.norm.pdf(params.sigma, loc=0,scale=50))
 
 adapt = KTAdapter(-10,np.linspace(-80,0,10),params)
