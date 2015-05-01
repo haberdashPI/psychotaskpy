@@ -13,6 +13,7 @@ phases = ['2AFC','passive_today','passive_static']
 
 booth_atten = {'corner': 27.6, 'left': 25.7, # calibrated on 9-15-14
                'middle': 30.7, # calibrated on 10-14-14
+               'right': 31.1, # calibrated on 04-15-15
                'none': 26}
 
 atten = booth_atten[booth()]
@@ -22,7 +23,7 @@ env = {'title': 'Frequency Discrimination',
        'debug': False,
        'sample_rate_Hz': 44100,
        'groups': ['Day1','fs_50ms','F_50ms','F30Ps_50ms','F30Pd_50ms','FD_50ms',
-                  'fs30Pd_50ms'],
+                  'fs30Pd_50ms','fs24Pd_50ms'],
        'default_blocks': 6,
        'data_file_dir': '../data',
        'num_trials': 60,
