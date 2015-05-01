@@ -43,6 +43,6 @@ def blocked_run(env,stimulus,sid,group,phase,condition,start_block,num_blocks):
                   LineWriter(dfile,info,info_order))
 
     ex.stimuli.TextBox("All Done!. Let the experimenter know you are finished!",
-                       util.MESSAGE_DIMS).present()
+                       MESSAGE_DIMS).present()
     env['exp'].keyboard.clear()
     env['exp'].keyboard.wait()
