@@ -9,7 +9,7 @@ import phase
 import twoAFC
 import passive
 
-phases = ['2AFC','passive_today','passive_static']
+phases = ['2AFC','passive_today','passive_yesterday']
 
 booth_atten = {'corner': 27.6, 'left': 25.7, # calibrated on 9-15-14
                'middle': 30.7, # calibrated on 10-14-14
