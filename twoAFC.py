@@ -60,7 +60,7 @@ def examples(env,stimulus,condition):
 def run(env,stimulus,write_line):
     if stimulus.has_key('sound_labels'):
         sound_1 = stimulus['sound_labels'][0]
-        sound_2 = stimulus['sound_labels'][0]
+        sound_2 = stimulus['sound_labels'][1]
     else:
         sound_1 = 'Sound 1'
         soudn_2 = 'Sound 2'
@@ -161,7 +161,7 @@ def run(env,stimulus,write_line):
                              100.0*(adapter.estimate_sd()-1)),
                              util.MESSAGE_DIMS).present()
     else:
-        ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f%%\n'
+        ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f\n'
                            '(Hit any key to continue)' %
                             (adapter.estimate(),adapter.estimate_sd()),
                              util.MESSAGE_DIMS).present()
