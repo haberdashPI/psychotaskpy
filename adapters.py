@@ -178,7 +178,6 @@ class KTAdapter:
                   -np.sum(p_incorrects * \
                           (np.log(p_incorrects) - np.log(p_i_norm)),axis=0)
 
-        print entropy
         self.delta = self.possible_deltas[np.argmin(entropy)]
         
     def estimate(self):
