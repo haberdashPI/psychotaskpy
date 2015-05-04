@@ -82,7 +82,7 @@ stimulus = {'beep_ms': 200,
             'example_delta': 60,
             'instructions': 'You will be listening for a tone.',
             'sound_labels': ['Time 1','Time 2'],
-            'full_question': 'Which time period had a tone?',
+            'full_question': 'Did time 1 [Q] or time 2 [P] have a tone?',
             'condition_order': ['250','500','1k','2k','4k','8k'],
             'conditions': {'250': 250, '500': 500, '1k': 1000,
                            '2k': 2000, '4k': 4000, '8k': 8000}}
