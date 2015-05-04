@@ -21,6 +21,7 @@ phases = ['2AFC']
 			   
 
 # calibrated on 05-03-15
+freqs = ['250','500','1k','2k','4k','8k']
 calibration_curve = \
   {'left': {'1k': [(20,98.8),(40,78.8),(45,73.8),(50,68.75),(55,63.7),
                    (60,58.6),(65,53.6),(70,48.5),(75,43.4),(80,37.7),
@@ -50,7 +51,7 @@ calibration_curve = \
                    (86.875,18.1),(87,18.1),(87.5,18.1),
                    (88,18),(88.5,18),(89,15.9),(90,15.8),(92,15.8),(93,13.5)]},
                    
-   'none': dict(zip(['250','500','1k','2k','4k','8k'],
+   'none': dict(zip(freqs,
                     repeat(zip(np.linspace(20,80,10),
                                np.linspace(100,10,10)),6)))}
 
@@ -58,18 +59,18 @@ dBSPL_to_dBHL = {'250': 27, '500': 13.5, '1k': 7.5, '2k': 9, '4k': 12, '8k': 15.
 
 def make_calfn(freq,curve):
     atten,dBSPL = zip(*curve)
-    return interp1d(atten,np.array(dBSPL) + dBSPL_to_dBHL[freq],'cubic')
+    return interp1d(np.array(dBSPL) - dBSPL_to_dBHL[freq],atten)
 
 calibration_fn = dict(map(lambda (freq,curve): (freq,make_calfn(freq,curve)),
                           calibration_curve[booth()].iteritems()))
 
 env = {'title': 'Tone Detection',
-       'debug': True,
+       'debug': False,
        'sample_rate_Hz': 44100,
        'groups': ['level'],
        'default_blocks': 1,
        'data_file_dir': '../data',
-       'num_trials': 30,
+       'num_trials': 15,
        'feedback_delay_ms': 400}
 
 stimulus = {'beep_ms': 200,
@@ -78,7 +79,7 @@ stimulus = {'beep_ms': 200,
             'response_delay_ms': 500,
             'example_standard': 'No tone played',
             'example_signal': "There's a Tone!",
-            'example_delta': 70,
+            'example_delta': 60,
             'instructions': 'You will be listening for a tone.',
             'sound_labels': ['Time 1','Time 2'],
             'full_question': 'Which time period had a tone?',
@@ -110,14 +111,14 @@ def generate_adapter(env,stimulus,condition):
     params['lp'] = np.log(scipy.stats.norm.pdf(params.theta,loc=0,scale=50)) + \
         np.log(scipy.stats.norm.pdf(params.sigma, loc=0,scale=50))
     
-    dBs = zip(*calibration_curve[booth()][condition])[1]
-    min_dB = min(dBs) + dBSPL_to_dBHL[condition]
-    max_dB = max(dBs) + dBSPL_to_dBHL[condition]
-    return adapters.KTAdapter(70,np.linspace(min_dB,max_dB,100),params)
+    min_dB = calibration_fn[condition].x[0]+0.01
+    max_dB = calibration_fn[condition].x[-1]-0.01
+    return adapters.KTAdapter(60,np.linspace(min_dB,max_dB,100),params)
 
 env['generate_adapter'] = generate_adapter
 
 # only run the expeirment if this file is being called directly
 # from the command line.
 if __name__ == "__main__":
-    experiment.start(env,stimulus,phases)
+    np.random.shuffle(freqs)
+    experiment.start(env,stimulus,phases,conditions=freqs)
