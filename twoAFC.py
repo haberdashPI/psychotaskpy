@@ -14,7 +14,7 @@ response_2 = 'p'
 @phase('2AFC')
 def train(env,stimulus,condition,block,is_start,write_line):
     if is_start: examples(env,stimulus,condition)
-    run(env,stimulus,write_line)
+    run(env,stimulus,condition,write_line)
 
 def examples(env,stimulus,condition):
     standard_message = ex.stimuli.TextBox(
@@ -57,7 +57,7 @@ def examples(env,stimulus,condition):
             standard_sound.play()
             env['exp'].clock.wait(stimulus['SOA_ms'],env['exp'].keyboard.check)
 
-def run(env,stimulus,write_line):
+def run(env,stimulus,condition,write_line):
     if stimulus.has_key('sound_labels'):
         sound_1 = stimulus['sound_labels'][0]
         sound_2 = stimulus['sound_labels'][1]
@@ -155,13 +155,13 @@ def run(env,stimulus,write_line):
         write_line(line_info,order)
 
     if adapter.mult:
-        ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f%%\n'
+        ex.stimuli.TextBox(condition+' Threshold: %2.3f, SD: %2.1f%%\n'
                            '(Hit any key to continue)' %
                             (adapter.estimate(),
                              100.0*(adapter.estimate_sd()-1)),
                              util.MESSAGE_DIMS).present()
     else:
-        ex.stimuli.TextBox('Threshold: %2.3f, SD: %2.1f\n'
+        ex.stimuli.TextBox(condition+' Threshold: %2.3f, SD: %2.1f\n'
                            '(Hit any key to continue)' %
                             (adapter.estimate(),adapter.estimate_sd()),
                              util.MESSAGE_DIMS).present()
