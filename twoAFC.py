@@ -63,7 +63,7 @@ def run(env,stimulus,condition,write_line):
         sound_2 = stimulus['sound_labels'][1]
     else:
         sound_1 = 'Sound 1'
-        soudn_2 = 'Sound 2'
+        sound_2 = 'Sound 2'
 
     if 'offset_stimulus_text' not in env or env['offset_stimulus_text']:
         stim_1_message = ex.stimuli.TextLine(sound_1+'                                                  ')
@@ -166,6 +166,5 @@ def run(env,stimulus,condition,write_line):
                             (adapter.estimate(),adapter.estimate_sd()),
                              util.MESSAGE_DIMS).present()
 
-    env['exp'].keyboard.clear()
     env['exp'].keyboard.wait()
     
