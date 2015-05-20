@@ -11,7 +11,8 @@ import passive
 
 phases = ['2AFC','passive_today','passive_yesterday']
 
-booth_atten = {'corner': 27.6, 'left': 25.7, # calibrated on 9-15-14
+booth_atten = {'corner': 27.6, # calibrated on 9-15-14
+               'left': 9.3, # calibrated on 05-20-15
                'middle': 30.7, # calibrated on 10-14-14
                'right': 31.1, # calibrated on 04-15-15
                'none': 26}
