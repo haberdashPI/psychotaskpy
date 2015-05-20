@@ -20,49 +20,21 @@ phases = ['2AFC']
 #               'none': 26}
 			   
 
-# calibrated on 05-03-15
 freqs = ['250','500','1k','2k','4k','8k']
-calibration_curve = \
-  {'left': {'1k': [(20,98.8),(40,78.8),(45,73.8),(50,68.75),(55,63.7),
-                   (60,58.6),(65,53.6),(70,48.5),(75,43.4),(80,37.7),
-                   (85,30.8),(87.5,26.9),(90,25.3),(91.25,22.6),
-                   (92.5,18),(93.75,13.6),(95,13)],
-            '250': [(10,104),(20,93.9),(30,83.9),(40,73.8),(50,64.2),
-                    (60,54.2),(70,43.7),(80,33),(82.5,30.4),(85,27.15),
-                    (86.25,26.2),(86.875,25.4),(87.5,23),(88.125,22.75),
-                    (88.75,22.6),(90,22),(91,21.2),(92,20.3),(93,18.6),
-                    (94,17.5)],
-            '500': [(10,105.7),(30,85.6),(50,65.7),(70,45.4),(80,34.6),
-                    (82.5,31.75),(85,29.0),(86.25,28),(86.875,27.5),
-                    (87.1875,26.7),(87.5,25.45),(90,24.05),(92.5,22.6),
-                    (93,22.1),(94,21.5)],
-            '2k': [(10,105.7),(30,85.3),(50,65.5),(70,45.1),(80,34.3),
-                   (8.25,31.15),(85,27.5),(86.25,27.5),(86.875,25.85),
-                   (87.1875,25.85),(87.34375,23.7),(87.5,23.7),(90,22.2),
-                   (91.25,19.6),(92.5,15.3),(93.25,11.4),(93.5,11.5),
-                   (93.75,11.4)],
-            '4k': [(10,99.6),(40,69.4),(50,59.8),(70,39.4),(80,28.6),
-                   (82.5,25.4),(85,22),(86.25,21.9),(87,20.4),(87.5,18.4),
-                   (88.125,17.2),(89,17.15),(90,17.15),(91,15.2),(92,15.2),
-                   (93,12.8),(94,11.3)],
-            '8k': [(10,97.4),(50,57.8),(70,37.1),(80,26.5),(82.5,24.8),
-                   (82.75,23.5),(86.25,21.1),(85,21.1),(86.25,21.1),(86.5,21.1),
-                   (86.75,21.1),(86.8,21.1),(86.85,21.1),(86.86,21.1),(86.8775,18.1),
-                   (86.875,18.1),(87,18.1),(87.5,18.1),
-                   (88,18),(88.5,18),(89,15.9),(90,15.8),(92,15.8),(93,13.5)]},
-                   
-   'none': dict(zip(freqs,
-                    repeat(zip(np.linspace(20,80,10),
-                               np.linspace(100,10,10)),6)))}
 
+# calibrated on 05-20-15
 dBSPL_to_dBHL = {'250': 27, '500': 13.5, '1k': 7.5, '2k': 9, '4k': 12, '8k': 15.5}
 
-def make_calfn(freq,curve):
-    atten,dBSPL = zip(*curve)
-    return interp1d(np.array(dBSPL) - dBSPL_to_dBHL[freq],atten)
+# def make_calfn(freq,curve):
+    # atten,dBSPL = zip(*curve)
+    # return interp1d(np.array(dBSPL) - dBSPL_to_dBHL[freq],atten)
 
-calibration_fn = dict(map(lambda (freq,curve): (freq,make_calfn(freq,curve)),
-                          calibration_curve[booth()].iteritems()))
+# calibration_fn = dict(map(lambda (freq,curve): (freq,make_calfn(freq,curve)),
+                          # calibration_curve[booth()].iteritems()))
+
+atten_20dB = {'left': {'250': 70, '500': 71.3, '1k': 75, '2k': 67.5, '4k': 66, '8k': 65}}                  
+def calibration_fn(freq,dB_HL):
+    return 20+atten_20dB[booth()][freq] - (dB_HL+dBSPL_to_dBHL[freq])
 
 env = {'title': 'Tone Detection',
        'debug': False,
@@ -93,7 +65,7 @@ def generate_sound(env,stimulus,condition,delta):
 
         beep = tone(cond,
                     stimulus['beep_ms'],
-                    calibration_fn[condition](delta),
+                    calibration_fn(condition,delta),
                     stimulus['ramp_ms'],
                     env['sample_rate_Hz'])
 
@@ -111,8 +83,8 @@ def generate_adapter(env,stimulus,condition):
     params['lp'] = np.log(scipy.stats.norm.pdf(params.theta,loc=0,scale=50)) + \
         np.log(scipy.stats.norm.pdf(params.sigma, loc=0,scale=50))
     
-    min_dB = calibration_fn[condition].x[0]+0.01
-    max_dB = calibration_fn[condition].x[-1]-0.01
+    min_dB = -10 #calibration_fn[condition].x[0]+0.01
+    max_dB = 80 #calibration_fn[condition].x[-1]-0.01
     return adapters.KTAdapter(60,np.linspace(min_dB,max_dB,100),params)
 
 env['generate_adapter'] = generate_adapter

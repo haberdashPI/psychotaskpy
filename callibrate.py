@@ -10,9 +10,9 @@ if len(sys.argv) >= 4:
     length = int(sys.argv[3])
     side = sys.argv[3]
 else:
-    atten = 30.4
+    atten = 9.3
     freq = 1000
-    length = 5000
+    length = 10000
     side = 'left'
 
 mix.pre_init(channels=2)
@@ -27,3 +27,10 @@ sound.play()
 time.sleep(length/1000)
 # left 31.1
 # right 30.4
+
+# 70 is 20 dB SPL 250
+# 71.3 is 20 dB SPL 500
+# 75 is 20 dB SPL 1k
+# 67.5 is 20 dB SPL 2k
+# 66 is 20 dB SPL 4k
+# 65 is 20 dB SPL 8k
