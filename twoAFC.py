@@ -1,31 +1,31 @@
 import expyriment as ex
-
-from util import tone, Info
 from phase import phase
 
 import util
 import random
-import numpy as np
 import datetime
 
 response_1 = 'q'
 response_2 = 'p'
+
+
+def _text_box(str):
+    ex.stimuli.TextBox(str,util.MESSAGE_DIMS)
+
 
 @phase('2AFC')
 def train(env,stimulus,condition,block,is_start,write_line):
     if is_start: examples(env,stimulus,condition)
     run(env,stimulus,condition,write_line)
 
-def examples(env,stimulus,condition):
-    standard_message = ex.stimuli.TextBox(
-                            stimulus['example_standard']+'\n' +
-                                 '(Hit any key to continue)',util.MESSAGE_DIMS)
-    standard_message.preload()
-    signal_message = ex.stimuli.TextBox(
-                            stimulus['example_signal']+'\n'+
-                                '(Hit any key to continue)',util.MESSAGE_DIMS)
-    signal_message.preload()
 
+def examples(env,stimulus,condition):
+    standard_message = _text_box(stimulus['example_standard'] + '\n' +
+                                 '(Hit any key to continue)')
+    standard_message.preload()
+    signal_message = _text_box(stimulus['example_signal'] + '\n' +
+                               '(Hit any key to continue)')
+    signal_message.preload()
 
     standard_sound = stimulus['generate'](0)
     example_delta = 0
@@ -37,10 +37,8 @@ def examples(env,stimulus,condition):
 
     signal = False
 
-    instructions = \
-       ex.stimuli.TextBox(
-            stimulus['instructions']+'\nHit any key to hear some examples.',
-            util.MESSAGE_DIMS)
+    instructions = _text_box(stimulus['instructions'] +
+                             '\nHit any key to hear some examples.')
 
     env['exp'].keyboard.clear()
     instructions.present()
@@ -57,21 +55,23 @@ def examples(env,stimulus,condition):
             standard_sound.play()
             env['exp'].clock.wait(stimulus['SOA_ms'],env['exp'].keyboard.check)
 
+
 def run(env,stimulus,condition,write_line):
-    if stimulus.has_key('sound_labels'):
+    if 'sound_labels' in stimulus:
         sound_1 = stimulus['sound_labels'][0]
         sound_2 = stimulus['sound_labels'][1]
     else:
         sound_1 = 'Sound 1'
         sound_2 = 'Sound 2'
 
+    spacing = '                                                  '
     if 'offset_stimulus_text' not in env or env['offset_stimulus_text']:
-        stim_1_message = ex.stimuli.TextLine(sound_1+'                                                  ')
-        stim_2_message = ex.stimuli.TextLine('                                                  '+sound_2)
+        stim_1_message = ex.stimuli.TextLine(sound_1+spacing)
+        stim_2_message = ex.stimuli.TextLine(spacing+sound_2)
     else:
         stim_1_message = ex.stimuli.TextLine(sound_1)
         stim_2_message = ex.stimuli.TextLine(sound_2)
-        
+
     stim_1_message.preload()
     stim_2_message.preload()
 
@@ -81,13 +81,15 @@ def run(env,stimulus,condition,write_line):
     correct_message.preload()
     incorrect_message = ex.stimuli.TextLine('Wrong')
     incorrect_message.preload()
-    
+
     adapter = env['adapter']
-    
+
     query_message_str = ''
-    try: query_message_str = stimulus['full_question']
-    except: query_message_str = 'Was '+sound_1+' [Q] or '+sound_2+'  [P] '+\
-        stimulus['question']+'?'
+    if 'full_question' in stimulus:
+        query_message_str = stimulus['full_question']
+    else:
+        query_message_str = ('Was ' + sound_1 + ' [Q] or ' + sound_2 +
+                             '  [P] ' + stimulus['question']+'?')
     query_message = ex.stimuli.TextLine(query_message_str)
     query_message.preload()
 
@@ -102,7 +104,7 @@ def run(env,stimulus,condition,write_line):
         if signal_interval == 0:
             stim_1 = stimulus['generate'](adapter.delta)
             stim_2 = stimulus['generate'](0)
-            
+
         else:
             stim_1 = stimulus['generate'](0)
             stim_2 = stimulus['generate'](adapter.delta)
@@ -114,11 +116,10 @@ def run(env,stimulus,condition,write_line):
 
         stim_2_message.present()
         stim_2.play()
-        
-        delay_ms = stim_2.get_length()*1000 + \
-          stimulus['response_delay_ms']
+
+        delay_ms = stim_2.get_length()*1000 + stimulus['response_delay_ms']
         env['exp'].clock.wait(delay_ms)
-        
+
         response = None
         while response is None:
             query_message.present()
@@ -127,7 +128,6 @@ def run(env,stimulus,condition,write_line):
             # cancels, requiring us to poll for a response again
             response,rt = \
                 env['exp'].keyboard.wait_char([response_1,response_2])
-            
 
         rt += stimulus['response_delay_ms']
         response = int(response == response_2)
@@ -142,29 +142,27 @@ def run(env,stimulus,condition,write_line):
         adapter.update(response,signal_interval)
 
         line_info = {'delta': delta,
-                    'user_response': response,
-                    'correct_response': signal_interval,
-                    'rt': rt,
-                    'threshold': adapter.estimate(),
-                    'threshold_sd': adapter.estimate_sd(),
-                    'timestamp': datetime.datetime.now()}
+                     'user_response': response,
+                     'correct_response': signal_interval,
+                     'rt': rt,
+                     'threshold': adapter.estimate(),
+                     'threshold_sd': adapter.estimate_sd(),
+                     'timestamp': datetime.datetime.now()}
 
         order = ['user_response','correct_response','rt','delta',
                  'threshold','threshold_sd','timestamp']
-        
+
         write_line(line_info,order)
 
     if adapter.mult:
-        ex.stimuli.TextBox(condition+' Threshold: %2.3f, SD: %2.1f%%\n'
-                           '(Hit any key to continue)' %
-                            (adapter.estimate(),
-                             100.0*(adapter.estimate_sd()-1)),
-                             util.MESSAGE_DIMS).present()
+        t = _text_box(condition+' Threshold: %2.3f, SD: %2.1f%%\n'
+                      '(Hit any key to continue)' %
+                      (adapter.estimate(),100.0*(adapter.estimate_sd()-1)))
+        t.present()
     else:
-        ex.stimuli.TextBox(condition+' Threshold: %2.3f, SD: %2.1f\n'
-                           '(Hit any key to continue)' %
-                            (adapter.estimate(),adapter.estimate_sd()),
-                             util.MESSAGE_DIMS).present()
+        t = _text_box(condition+' Threshold: %2.3f, SD: %2.1f\n'
+                      '(Hit any key to continue)' %
+                      (adapter.estimate(),adapter.estimate_sd()))
+        t.present()
 
     env['exp'].keyboard.wait()
-    
