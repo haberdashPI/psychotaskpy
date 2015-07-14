@@ -1,15 +1,32 @@
 import scipy
 import scipy.stats
-import pandas as pd
 import numpy as np
 from random import randint
 from math import *
 
-class ConstantAdapter:
+class BaseAdapter(object):
+    def select_deltas(self,n):
+        if n == 2:
+            if randint(0,1) == 0:
+                return [0],[self.delta,0]
+            else:
+                return [1],[0,self.delta]
+        if n == 1:
+            if randint(0,1) == 0:
+                return [0],[0]
+            else:
+                return [1],[self.delta]
+
+    def update_all(self,responses,correct_responses):
+        self.update(responses[0],correct_responses[0])
+
+
+class ConstantAdapter(BaseAdapter):
     def __init__(self,delta_seq):
         self.deltas = delta_seq + [0]
         self.index = 0
         self.update()
+
     def update(self,given=None,correct=None):
         self.delta = self.delta_seq[self.index]
         self.index = self.index + 1
@@ -17,13 +34,14 @@ class ConstantAdapter:
 ################################################################################
 # Stepping adapter: classic adaptive threshold estimation ala Levitt 1971
 
-class Stepper:
+
+class Stepper(BaseAdapter):
     def __init__(self,start,bigstep,littlestep,down,up,big_reverse=3,
                  drop_reversals=3,min_reversals=7,mult=False,
-				 min_delta=float('-inf'),max_delta=float('inf')):
+                 min_delta=float('-inf'),max_delta=float('inf')):
 
         self.min_delta = min_delta
-	self.max_delta = max_delta
+        self.max_delta = max_delta
         self.down = down
         self.up = up
         self.bigstep = bigstep
@@ -45,7 +63,7 @@ class Stepper:
             self.reversals.append(self.delta)
 
         self.last_direction = direction
-                 
+
     def update(self,user_response,correct_response):
         if user_response == correct_response:
             self.num_correct = self.num_correct + 1
@@ -102,6 +120,7 @@ class Stepper:
                 return self.reversals[(self.drop_reversals+1):]
             else:
                 return self.reversals[self.drop_reversals:]
+
     def estimate(self):
         if self.mult:
             return np.exp(np.mean(np.log(self.estimates())))
@@ -117,16 +136,18 @@ class Stepper:
 ################################################################################
 # Bayesian estimation of slopes, as per Kontsevich & Tyler 1999
 
+
 def _log_sum(xs):
     min_x = np.min(xs)
     return np.log(np.sum(np.exp(xs - min_x))) + min_x
+
 
 def _prob_response(correct,x,table):
 
     L = 1
     try: L = len(x)
     except: pass
-        
+
     theta = np.tile(table.theta,(L,1)).T
     sigma = np.tile(table.sigma,(L,1)).T
     miss = np.tile(table.miss,(L,1)).T
@@ -147,7 +168,7 @@ def _threshold(table,thresh=0.79):
     return scipy.stats.norm.ppf((thresh-miss/2)/(1.0-miss/2),
                                 loc=theta,scale=sigma)
 
-class KTAdapter:
+class KTAdapter(BaseAdapter):
     def __init__(self,start_delta,possible_deltas,log_prior_table):
         self.mult = False
         self.possible_deltas = possible_deltas
@@ -190,4 +211,3 @@ class KTAdapter:
         thresh = np.average(ts, weights=ws)
 
         return np.sqrt(np.average((ts-thresh)**2, weights=ws))
-                    

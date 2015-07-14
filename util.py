@@ -4,12 +4,12 @@ import numpy as np
 
 MESSAGE_DIMS = (1000,400)
 
+
 class Info:
     pass
 
+
 def booth():
-    booth_indices = {'left': 1,'middle': 2, 'right': 3,'corner': 4}
-    
     try:
         with open('C:\\booth_name.txt','r') as f:
             booth = f.readline()
@@ -17,23 +17,26 @@ def booth():
     except:
         return "none"
 
+
 def left(xs):
     xs[:,1] = np.zeros(xs.shape[0])
     return xs
+
 
 def right(xs):
     xs[:,0] = np.zeros(xs.shape[0])
     return xs
 
+
 def silence(length_ms,sample_rate_Hz):
     n = round(sample_rate_Hz * length_ms/1000.0)
     return np.zeros((n,2))
+
 
 def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz,phase=0):
     t = np.array(range(int(round(sample_rate_Hz * length_ms/1000.0))))
     ramp_t = np.array(range(int(round(sample_rate_Hz * ramp_ms/1000.0))))
 
-    #pdb.set_trace()
     # amplitude envelope
     envelope = \
       np.hstack([-0.5*np.cos((pi*ramp_t)/len(ramp_t))+0.5,
