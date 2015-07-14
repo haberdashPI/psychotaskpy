@@ -9,7 +9,7 @@ import passive
 phases = ['2AFC','passive_today','passive_static']
 
 booth_atten = {'corner': 27.6, # calibrated on 9-15-14
-               'left': 25.7,   # calibrated on 9-15-14
+               'left': 9.3,    # calibrated on 05-20-15
                'middle': 30.7, # calibrated on 10-14-14
                'right': 31.1,  # calibrated on 04-15-15
                'none': 26}
@@ -17,7 +17,7 @@ booth_atten = {'corner': 27.6, # calibrated on 9-15-14
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
-groups = ['FD_50ms']
+groups = ['FD_50ms','fs24D_50ms']
 
 stimuli = {'d1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
                        'examples': [{'str': 'Shorter sound','delta': 0},
