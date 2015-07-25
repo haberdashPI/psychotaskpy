@@ -1,16 +1,20 @@
+import copy
 import expyriment as ex
 import run_blocks
 import pygame
 import util
-from settings import prepare, UserNumber, request_user_input, Vars
+from phase import get_phase_defaults
+from settings import prepare, UserNumber, request_user_input, Plural
 
 
-def start(base_env):
+def start(env):
 
     default = {'start_block': UserNumber('Start Block', 0),
                'booth': util.booth(),
-               'debug': False}
-    env = prepare(base_env,default)
+               'conditions': Plural('condition'),
+               'debug': False,
+               'write_to_file': ['sid','group','phase','condition','booth']}
+    global_env = prepare(env,default)
 
     ex.control.defaults.pause_key = pygame.K_F12
 
@@ -21,25 +25,30 @@ def start(base_env):
 
     exp.set_log_level(0)
 
-    env['exp'] = exp
-    if env['debug']:
+    if global_env['debug']:
         ex.control.set_develop_mode(True)
 
     ex.control.initialize(exp)
 
-    env = request_user_input(env)
-    env = prepare(env,{'stimuli': [env['stimulus']]})
+    global_env = request_user_input(global_env)
 
-    ex.control.start(exp,skip_ready_screen=True,subject_id=env['sid'])
+    ex.control.start(exp,skip_ready_screen=True,subject_id=global_env['sid'])
     try:
-        for stimulus in env['stimuli']:
-            env['stimulus'] = stimulus
-            run_blocks.blocked_run(env)
+        for cond_env in global_env['conditions']:
+            defaults = copy.deepcopy(global_env)
+            del defaults['conditions']
+            defaults['exp'] = exp
+            defaults['condition'] = cond_env['name']
 
-        ex.stimuli.TextBox("All Done!. Let the experimenter know you are finished!",
-                           util.MESSAGE_DIMS).present()
+            cond_env = prepare(cond_env,defaults)
+            cond_env = prepare(cond_env,get_phase_defaults(cond_env),True)
+            del cond_env['name']
+
+            run_blocks.blocked_run(cond_env)
+
+        ex.stimuli.TextBox("All Done! Let the experimenter know you are" +
+                           " finished!",util.MESSAGE_DIMS).present()
+        exp.keyboard.wait()
 
     finally:
         ex.control.end()
-
-    print env

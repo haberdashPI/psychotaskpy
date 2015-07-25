@@ -8,10 +8,6 @@ from functools32 import lru_cache
 
 
 def blocked_run(env):
-    default = {'write_to_file': ['sid','group','phase',
-                                 ('stimulus','key'),'booth']}
-    env = prepare(env,default)
-
     def as_sound(floats):
         return mix.Sound(np.asarray(floats*(2**15),'int16'))
 
@@ -36,6 +32,3 @@ def blocked_run(env):
         info_order,info = summarize(env,env['write_to_file'])
         run_phase(env['phase'],env,env['block'] == env['start_block'],
                   LineWriter(dfile,info,info_order))
-
-    env['exp'].keyboard.clear()
-    env['exp'].keyboard.wait()

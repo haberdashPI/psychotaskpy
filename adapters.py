@@ -4,32 +4,57 @@ import numpy as np
 from random import randint
 from math import *
 
+
 class BaseAdapter(object):
-    def select_deltas(self,n):
+    def next_trial(self,n):
         if n == 2:
             if randint(0,1) == 0:
-                return [0],[self.delta,0]
+                return [self.delta,0],0
             else:
-                return [1],[0,self.delta]
+                return [0,self.delta],1
         if n == 1:
             if randint(0,1) == 0:
-                return [0],[0]
+                return [0],0
             else:
-                return [1],[self.delta]
+                return [self.delta],1
 
-    def update_all(self,responses,correct_responses):
-        self.update(responses[0],correct_responses[0])
+    def get_delta(self):
+        return self.delta
 
+    def single_question_adapters(self):
+        return [self]
 
-class ConstantAdapter(BaseAdapter):
+    def next_multi_trial(self,n):
+        xs = self.next_trial(n)
+        return xs[0],[xs[1]]
+
+class ConstantStimuliAdapter(BaseAdapter):
     def __init__(self,delta_seq):
-        self.deltas = delta_seq + [0]
+        self.deltas = delta_seq
         self.index = 0
         self.update()
 
     def update(self,given=None,correct=None):
-        self.delta = self.delta_seq[self.index]
+        if self.index < len(self.deltas):
+            self.delta = self.deltas[self.index]
+        elif self.index > len(self.deltas):
+            raise RuntimeError('Unexpected trial index: '+self.index)
         self.index = self.index + 1
+
+
+class MultiAdapter(BaseAdapter):
+    def __init__(self,*adapters):
+        self.adapters = adapters
+
+    def single_question_adapters(self):
+        return self.adapters
+
+    def next_trial(self,n):
+        raise RuntimeError('Cannot get a single response for a MultiAdapter')
+
+    def next_multi_trial(self,n):
+        xs = zip(*[a.next_trial(n) for a in self.adapters])
+        return zip(*xs[0]), xs[1]
 
 ################################################################################
 # Stepping adapter: classic adaptive threshold estimation ala Levitt 1971
@@ -159,14 +184,16 @@ def _prob_response(correct,x,table):
     if correct: return p_correct
     else: return 1-p_correct
 
+
 def _threshold(table,thresh=0.79):
     theta = table.theta
     sigma = table.sigma
     miss = table.miss
 
-
     return scipy.stats.norm.ppf((thresh-miss/2)/(1.0-miss/2),
                                 loc=theta,scale=sigma)
+
+
 
 class KTAdapter(BaseAdapter):
     def __init__(self,start_delta,possible_deltas,log_prior_table):
@@ -176,6 +203,7 @@ class KTAdapter(BaseAdapter):
         self.delta = start_delta
         if not (self.table.columns == 'lp').any():
             self.table['lp'] = 0
+
     def update(self,user_response,correct_response):
         correct = user_response == correct_response
 
@@ -187,7 +215,7 @@ class KTAdapter(BaseAdapter):
         # select minimum entropy delta
         p_corrects = _prob_response(True,self.possible_deltas,self.table)
         p_incorrects = 1-p_corrects
-        
+
         p_corrects *= np.exp(self.table.lp)[:,np.newaxis]
         p_c_norm = np.sum(p_corrects,axis=0)
 
@@ -200,11 +228,12 @@ class KTAdapter(BaseAdapter):
                           (np.log(p_incorrects) - np.log(p_i_norm)),axis=0)
 
         self.delta = self.possible_deltas[np.argmin(entropy)]
-        
+
     def estimate(self):
         ts = _threshold(self.table)
         return np.average(ts[~np.isnan(ts)],
                           weights=np.exp(self.table.lp[~np.isnan(ts)]))
+
     def estimate_sd(self):
         ts = _threshold(self.table)
         ws = np.exp(self.table.lp)

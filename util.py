@@ -1,6 +1,7 @@
 import os
 from math import pi
 import numpy as np
+import scipy.signal
 
 MESSAGE_DIMS = (1000,400)
 
@@ -28,29 +29,76 @@ def right(xs):
     return xs
 
 
+def mix(sound1,sound2,max_length=None):
+    if not max_length:
+        max_length = max(sound1.shape[0],sound2.shape[0])
+    sound1 = np.vstack([sound1, np.zeros((max_length - sound1.shape[0],2))])
+    sound2 = np.vstack([sound2, np.zeros((max_length - sound2.shape[0],2))])
+    return sound1 + sound2
+
 def silence(length_ms,sample_rate_Hz):
     n = round(sample_rate_Hz * length_ms/1000.0)
     return np.zeros((n,2))
 
 
-def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz,phase=0):
-    t = np.array(range(int(round(sample_rate_Hz * length_ms/1000.0))))
-    ramp_t = np.array(range(int(round(sample_rate_Hz * ramp_ms/1000.0))))
+def sound_envelope(length_ms,ramp_ms,sample_rate_Hz):
+    total_len = int(round(sample_rate_Hz * length_ms/1000.0))
+    ramp_len = int(round(sample_rate_Hz * ramp_ms/1000.0))
+    ramp_t = np.array(range(ramp_len))
 
     # amplitude envelope
-    envelope = \
-      np.hstack([-0.5*np.cos((pi*ramp_t)/len(ramp_t))+0.5,
-                np.ones(len(t) - 2*len(ramp_t)),
-                0.5*np.cos((pi*ramp_t)/len(ramp_t))+0.5])
+    return np.hstack([-0.5*np.cos((pi*ramp_t)/ramp_len)+0.5,
+                      np.ones(total_len - 2*ramp_len),
+                      0.5*np.cos((pi*ramp_t)/ramp_len)+0.5])
+
+
+def attenuate(xs,attenuation_dB):
+    rms = np.sqrt(np.mean(xs**2))
+    return (10**(-attenuation_dB/20.) * (xs/rms))
+
+def tone(freq_Hz,length_ms,attenuation_dB,ramp_ms,sample_rate_Hz,phase=0):
+    t = np.array(range(int(round(sample_rate_Hz * length_ms/1000.0))))
+    envelope = sound_envelope(length_ms,ramp_ms,sample_rate_Hz)
 
     # unnormalized tone
     xs = envelope * np.sin(2*pi*t / (sample_rate_Hz/freq_Hz) + phase)
 
     # normalized tone
-    rms = np.sqrt(np.mean(xs**2))
-    xs = (10**(-attenuation_dB/20.) * (xs/rms))
+    xs = attenuate(xs,attenuation_dB)
 
     return np.vstack([xs, xs]).T
+
+
+def notch_noise(low_Hz,high_Hz,length_ms,ramp_ms,atten_dB,
+                sample_rate_Hz,order=5):
+    total_len = int(round(sample_rate_Hz * length_ms/1000.0))
+    envelope = sound_envelope(length_ms,ramp_ms,sample_rate_Hz)
+
+    nyq = 0.5*sample_rate_Hz
+    low = low_Hz / nyq
+    high = high_Hz / nyq
+    b,a = scipy.signal.butter(order,[low, high],btype='band')
+
+    notch = envelope * scipy.signal.lfilter(b,a,2*np.random.rand(total_len)-1)
+    notch = attenuate(notch,atten_dB)
+
+    return np.vstack([notch, notch]).T
+
+
+def lowpass_noise(high_Hz,length_ms,ramp_ms,atten_dB,
+                sample_rate_Hz,order=5):
+    total_len = int(round(sample_rate_Hz * length_ms/1000.0))
+    envelope = sound_envelope(length_ms,ramp_ms,sample_rate_Hz)
+
+    nyq = 0.5*sample_rate_Hz
+    high = high_Hz / nyq
+    b,a = scipy.signal.butter(order,high,btype='lowpass')
+
+    notch = envelope * scipy.signal.lfilter(b,a,2*np.random.rand(total_len)-1)
+    notch = attenuate(notch,atten_dB)
+
+    return np.vstack([notch, notch]).T
+
 
 def unique_file(filename_pattern):
     index = 0
@@ -59,6 +107,7 @@ def unique_file(filename_pattern):
         index = index + 1
         fname = filename_pattern % index
     return fname
+
 
 def nth_file(i,filename_pattern,give_up_after=10,wrap_around=False):
     index = 0
