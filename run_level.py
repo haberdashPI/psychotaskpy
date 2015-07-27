@@ -1,81 +1,88 @@
-from itertools import repeat
-from scipy.interpolate import interp1d
+from util import *
+from settings import *
+
 import pandas as pd
 import scipy.stats
-from util import *
-import glob
 import adapters
 import experiment
 import phase
 
 # setup the types of phases we want to use
-import twoAFC
-import passive
+import AFC
 
-phases = ['2AFC']
-
-#booth_atten = {'corner': 27.6, 'left': 25.7, # calibrated on 9-15-14
-#               'middle': 30.7, # calibrated on 10-14-14
-#			   'right': 31.1, # calibrated on 04-15-15
-#               'none': 26}
-			   
+phases = ['AFC']
 
 freqs = ['250','500','1k','2k','4k','8k']
 
 # calibrated on 05-20-15
-dBSPL_to_dBHL = {'250': 27, '500': 13.5, '1k': 7.5, '2k': 9, '4k': 12, '8k': 15.5}
+dBSPL_to_dBHL = {'250': 27, '500': 13.5, '1k': 7.5, '2k': 9,
+                 '4k': 12, '8k': 15.5}
 
-# def make_calfn(freq,curve):
-    # atten,dBSPL = zip(*curve)
-    # return interp1d(np.array(dBSPL) - dBSPL_to_dBHL[freq],atten)
+atten_20dB = {'left': {'250': 70, '500': 71.3, '1k': 75, '2k': 67.5,
+                       '4k': 66, '8k': 65},
+              'none': {'250': 70, '500': 71.3, '1k': 75, '2k': 67.5,
+                       '4k': 66, '8k': 65}}
 
-# calibration_fn = dict(map(lambda (freq,curve): (freq,make_calfn(freq,curve)),
-                          # calibration_curve[booth()].iteritems()))
 
-atten_20dB = {'left': {'250': 70, '500': 71.3, '1k': 75, '2k': 67.5, '4k': 66, '8k': 65}}                  
 def calibration_fn(freq,dB_HL):
     return 20+atten_20dB[booth()][freq] - (dB_HL+dBSPL_to_dBHL[freq])
 
+
+conditions = [{'name': '250', 'tone_Hz': 250},
+              {'name': '500', 'tone_Hz': 500},
+              {'name': '1k', 'tone_Hz': 1000},
+              {'name': '2k', 'tone_Hz': 2000},
+              {'name': '4k', 'tone_Hz': 4000},
+              {'name': '8k', 'tone_Hz': 8000}]
+np.random.shuffle(conditions)
+
 env = {'title': 'Tone Detection',
-       'debug': False,
+       'sid': UserNumber('Subject ID',0,priority=0),
+       'start_block': 0,
+       'phase': 'AFC',
        'sample_rate_Hz': 44100,
-       'groups': ['level'],
-       'default_blocks': 1,
+       'group': 'level',
+       'num_blocks': 1,
        'data_file_dir': '../data',
        'num_trials': 15,
-       'feedback_delay_ms': 400}
+       'feedback_delay_ms': 400,
+       'beep_ms': 200,
+       'ramp_ms': 5,
+       'SOA_ms': 900,
+       'response_delay_ms': 500,
+       'example_standard': 'No tone played',
+       'example_signal': "There's a Tone!",
+       'example_delta': 60,
+       'instructions': 'You will be listening for a tone.',
+       'presentations': 2,
+       'question': {'str': Vars('Did Time 1 [{responses[0]}] or time 2' +
+                                ' [{responses[1]}] have a tone?'),
+                     'alternatives': 2,
+                     'labels': ['Time 1','Time 2']},
+       'examples': [{'str': 'Beep', 'delta': 60},
+                    {'str': 'Silence', 'delta': None}],
+       'conditions': conditions}
 
-stimulus = {'beep_ms': 200,
-            'ramp_ms': 5,
-            'SOA_ms': 900,
-            'response_delay_ms': 500,
-            'example_standard': 'No tone played',
-            'example_signal': "There's a Tone!",
-            'example_delta': 60,
-            'instructions': 'You will be listening for a tone.',
-            'sound_labels': ['Time 1','Time 2'],
-            'full_question': 'Did time 1 [Q] or time 2 [P] have a tone?',
-            'condition_order': ['250','500','1k','2k','4k','8k'],
-            'conditions': {'250': 250, '500': 500, '1k': 1000,
-                           '2k': 2000, '4k': 4000, '8k': 8000}}
-                                                      
-def generate_sound(env,stimulus,condition,delta):
-    if delta != 0:
-        cond = stimulus['conditions'][condition]
 
-        beep = tone(cond,
-                    stimulus['beep_ms'],
-                    calibration_fn(condition,delta),
-                    stimulus['ramp_ms'],
+def generate_sound(env,delta):
+    if delta is not None:
+        beep = tone(env['tone_Hz'],
+                    env['beep_ms'],
+                    calibration_fn(env['condition'],delta),
+                    env['ramp_ms'],
                     env['sample_rate_Hz'])
 
         return left(beep).copy()
     else:
-        return silence(stimulus['beep_ms'],env['sample_rate_Hz']).copy()
+        return silence(env['beep_ms'],env['sample_rate_Hz']).copy()
 
-stimulus['generate_sound'] = generate_sound
+env['generate_sound'] = generate_sound
 
-def generate_adapter(env,stimulus,condition):
+class LevelAdapter(adapters.KTAdapter):
+  def baseline_delta(self):
+    return None
+
+def generate_adapter(env):
     params = pd.DataFrame({'theta': np.tile(np.linspace(120,-10,130),50),
                            'sigma': np.repeat(np.linspace(0.2,100,50),130),
                            'miss': 0.08})
@@ -85,12 +92,10 @@ def generate_adapter(env,stimulus,condition):
     
     min_dB = -10 #calibration_fn[condition].x[0]+0.01
     max_dB = 80 #calibration_fn[condition].x[-1]-0.01
-    return adapters.KTAdapter(60,np.linspace(min_dB,max_dB,100),params)
+    return LevelAdapter(60,np.linspace(min_dB,max_dB,100),params)
 
 env['generate_adapter'] = generate_adapter
 
 # only run the expeirment if this file is being called directly
 # from the command line.
-if __name__ == "__main__":
-    np.random.shuffle(freqs)
-    experiment.start(env,stimulus,phases,conditions=freqs)
+if __name__ == "__main__": experiment.start(env)

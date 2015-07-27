@@ -28,6 +28,7 @@ def blocked_run(env):
         dfile = unique_file(env['data_file_dir'] + '/' + ("%04d" % env['sid']) + '_' +
                             time.strftime("%Y_%m_%d_") + str(env['phase']) +
                             "_%02d.dat")
+        print "Writing data to: ",dfile
         env['adapter'] = env['generate_adapter'](env)
         info_order,info = summarize(env,env['write_to_file'])
         run_phase(env['phase'],env,env['block'] == env['start_block'],

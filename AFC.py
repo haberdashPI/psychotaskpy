@@ -192,13 +192,13 @@ def run(env,write_line):
 
     if env['report_threshold']:
         if adapter.mult:
-            t = setup_message(env['name'] +
+            t = setup_message(env['condition'] +
                               ' Threshold: %2.3f, SD(log): %2.1f%%\n'
                               '(Hit any key to continue)' %
                               (adapter.estimate(),adapter.estimate_sd()),True)
             t.present()
         else:
-            t = setup_message(env['name']+
+            t = setup_message(env['condition']+
                               ' Threshold: %2.3f, SD: %2.1f\n'
                               '(Hit any key to continue)' %
                               (adapter.estimate(),adapter.estimate_sd()),True)

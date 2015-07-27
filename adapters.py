@@ -6,15 +6,18 @@ from math import *
 
 
 class BaseAdapter(object):
+    def baseline_delta(self):
+        return 0
+
     def next_trial(self,n):
         if n == 2:
             if randint(0,1) == 0:
-                return [self.delta,0],0
+                return [self.delta,self.baseline_delta()],0
             else:
-                return [0,self.delta],1
+                return [self.baseline_delta(),self.delta],1
         if n == 1:
             if randint(0,1) == 0:
-                return [0],0
+                return [self.baseline_delta()],0
             else:
                 return [self.delta],1
 

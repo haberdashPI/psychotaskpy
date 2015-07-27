@@ -40,7 +40,6 @@ conditions = {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
 
 env = {'title': 'Frequency Discrimination',
        'sample_rate_Hz': 44100,
-       'debug': True,
        'atten_dB': atten,
        'data_file_dir': '../data',
        'num_trials': 60,

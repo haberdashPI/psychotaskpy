@@ -1,12 +1,14 @@
 from util import *
+from settings import *
 import adapters
 import experiment
+
 
 # setup the types of phases we want to use
 import AFC
 import passive
 
-phases = ['2AFC','passive_today','passive_static']
+phases = ['AFC','passive_today','passive_static']
 
 booth_atten = {'corner': 27.6,  # calibrated on 9-15-14
                'left': 9.3,     # calibrated on 05-20-15
@@ -46,20 +48,22 @@ env = {'title': 'Duration Discrimination',
        'sid': UserNumber('Subject ID',0,priority=0),
        'group': UserSelect('Group',groups,priority=1),
        'phase': UserSelect('Phase',phases,priority=2),
-       'condition': UserSelect('Condition',['f1k50ms','f1k100ms','f4k50ms'],
+       'condition': UserSelect('Condition',['d1k50ms','d1k100ms','d4k50ms'],
                                conditions,priority=3),
        'num_blocks': UserNumber('Blocks',6,priority=4),
-       'question': Vars('Was {labels[0]} [{responses[0]}] or ' +
-                        '{labels[1]} [{responses[1]}] longer?')}
+       'question':
+       {'str': Vars('Was {labels[0]} [{responses[0]}] or ' +
+                    '{labels[1]} [{responses[1]}] lower in frequency?'),
+        'alternatives': 2}}
 
 def generate_sound(env,delta):
-    beep = tone(env['condition']['frequency_Hz'],
+    beep = tone(env['frequency_Hz'],
                 env['beep_ms'],
                 env['atten_dB'],
                 env['ramp_ms'],
                 env['sample_rate_Hz'])
 
-    space = silence(env['condition']['length_ms'] - env['beep_ms'] + delta,
+    space = silence(env['length_ms'] - env['beep_ms'] + delta,
                     env['sample_rate_Hz'])
 
     return left(np.vstack([beep,space,beep])).copy()
@@ -67,7 +71,7 @@ env['generate_sound'] = generate_sound
 
 
 def generate_adapter(env):
-    length = env['condition']['length_ms']
+    length = env['length_ms']
     return adapters.Stepper(start=0.1*length,bigstep=2,littlestep=np.sqrt(2),
                             down=3,up=1,mult=True,min_delta=0,
                             max_delta=env['SOA_ms']/2)
