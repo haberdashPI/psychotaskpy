@@ -1,35 +1,20 @@
+import copy
 import expyriment as ex
 import run_blocks
 import pygame
-import phase
 import util
+from phase import get_phase_defaults
+from settings import prepare, UserNumber, request_user_input, Plural
 
-def collect_fields(setup,order):
-    for field in order:
-        if isinstance(setup[field],list):
-            tm = ex.io.TextMenu(field,setup[field],400)
-            setup[field] = setup[field][tm.get(0)]
-        else:
-            ti = ex.io.TextInput(field)
-            setup[field] = int(ti.get(str(setup[field])))
 
-    return setup
+def start(env):
 
-def start(env,stimulus,phases,conditions=None):
-    setup = {'Subject ID': 0,
-         'Group': env['groups'], 'Phase': phases,
-         'Condition': stimulus['condition_order'],
-         'Blocks': env['default_blocks'],
-         'Start Block': 0}
-         
-    if conditions is None:
-        order = ['Subject ID','Group','Phase','Condition','Blocks','Start Block']
-    else:
-        order = ['Subject ID','Group','Phase','Blocks','Start Block']
-
-    if env.has_key('fields'):
-        setup.update(env['fields'])
-        order += env['field_order']
+    default = {'start_block': UserNumber('Start Block', 0),
+               'booth': util.booth(),
+               'conditions': Plural('condition'),
+               'debug': False,
+               'write_to_file': ['sid','group','phase','condition','booth']}
+    global_env = prepare(env,default)
 
     ex.control.defaults.pause_key = pygame.K_F12
 
@@ -40,31 +25,30 @@ def start(env,stimulus,phases,conditions=None):
 
     exp.set_log_level(0)
 
-    env['exp'] = exp
-    if env['debug']:
+    if global_env['debug']:
         ex.control.set_develop_mode(True)
 
     ex.control.initialize(exp)
 
-    setup = collect_fields(setup,order)
+    global_env = request_user_input(global_env)
 
-    ex.control.start(exp,skip_ready_screen = True,subject_id=setup['Subject ID'])
+    ex.control.start(exp,skip_ready_screen=True,subject_id=global_env['sid'])
     try:
-        if conditions is None:
-            run_blocks.blocked_run(env,stimulus,
-                exp.subject,setup['Group'],setup['Phase'],
-                setup['Condition'],setup['Start Block'],setup['Blocks'])
-        else:
-            for condition in conditions:
-                run_blocks.blocked_run(env,stimulus,
-                    exp.subject,setup['Group'],setup['Phase'],
-                    condition,setup['Start Block'],setup['Blocks'])
-                    
-        ex.stimuli.TextBox("All Done!. Let the experimenter know you are finished!",
-                            util.MESSAGE_DIMS).present()
+        for cond_env in global_env['conditions']:
+            defaults = copy.deepcopy(global_env)
+            del defaults['conditions']
+            defaults['exp'] = exp
+            defaults['condition'] = cond_env['name']
+
+            cond_env = prepare(cond_env,defaults)
+            cond_env = prepare(cond_env,get_phase_defaults(cond_env),True)
+            del cond_env['name']
+
+            run_blocks.blocked_run(cond_env)
+
+        ex.stimuli.TextBox("All Done! Let the experimenter know you are" +
+                           " finished!",util.MESSAGE_DIMS).present()
+        exp.keyboard.wait()
 
     finally:
         ex.control.end()
-
-    print setup
-

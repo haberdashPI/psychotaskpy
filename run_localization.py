@@ -1,114 +1,137 @@
 from util import *
-import glob
+from settings import *
 import adapters
 import experiment
 
 # setup the types of phases we want to use
-import twoAFC
+import AFC
 import passive
 
-phases = ['2AFC','passive_today','passive_static']
+phases = ['2AFC','passive_today','passive_yesterday']
 
-booth_atten = \
-    {'corner': {'right': 45.3, 'left': 43.6}, # calibrated on 09-15-14
-     'left': {'right': 42.8, 'left': 41.7},   # calibrated on 09-15-14
-     'middle': {'right': 47.8, 'left': 46.7}, # calibrated on 10-14-14
-     'none': {'right': 45, 'left': 45}}
+booth_atten = {'corner':{'right': 45.3, 'left': 43.6},  # calibrated on 09-15-14
+               'left':  {'right': 42.8, 'left': 41.7},  # calibrated on 09-15-14
+               'middle':{'right': 47.8, 'left': 46.7},  # calibrated on 10-14-14
+               'none':  {'right': 45, 'left': 45}}
+
 atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
+
+groups = ['Day1','fs_50ms','F_50ms','F30Ps_50ms','F30Pd_50ms',
+          'FD_50ms','fs30Pd_50ms','fs24Pd_50ms']
+
+conditions = {'ILD_4k0dB':
+              {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 0,
+               'type': 'ILD',
+               'examples': [{'str': 'Sound more to the center','delta': 0},
+                            {'str': 'Sound more to the right','delta': 8}]},
+              'ILD_4k6dB':
+              {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 6,
+               'type': 'ILD',
+               'examples': [{'str': 'Sound more to the center','delta': 0},
+                            {'str': 'Sound more to the right','delta': 8}]},
+              'ILD_6k0dB':
+              {'length_ms': 300, 'frequency_Hz': 6000,'offset_dB': 0,
+               'type': 'ILD',
+               'examples': [{'str': 'Sound more to the center','delta': 0},
+                            {'str': 'Sound more to the right','delta': 8}]},
+              'ITD_500Hz0us':
+              {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 0,
+               'type': 'ITD',
+               'examples': [{'str': 'Sound more to the center','delta': 0},
+                            {'str': 'Sound more to the right','delta': 200}]},
+              'ITD_500Hz200us':
+              {'length_ms': 300, 'frequency_Hz': 500,'offset_us': 200,
+               'type': 'ITD',
+               'examples': [{'str': 'Sound more to the center','delta': 0},
+                            {'str': 'Sound more to the right','delta': 200}]}}
+
+
 env = {'title': 'Frequency Discrimination',
-       'debug': False,
        'sample_rate_Hz': 44100,
+       'atten_dB': atten,
        'data_file_dir': '../data',
        'num_trials': 60,
-       'default_blocks': 5,
        'feedback_delay_ms': 400,
-       'groups': ['Day1','A','P','A_3hP','L30TLp','L24LToff'],
-       'fields': {'Starting Level': 6},
-       'field_order': ['Starting Level'],
-       'offset_stimulus_text': False}
+       'ramp_ms': 10,
+       'SOA_ms': 900,
+       'response_delay_ms': 500,
+       'passive_delay_ms': 767,  # found from average time between response
+       'presentations': 2,
+       'instructions': 'You will be listening for the sound to your right ear.',
+       'sid': UserNumber('Subject ID',0,priority=0),
+       'group': UserSelect('Group',groups,priority=1),
+       'phase': UserSelect('Phase',phases,priority=2),
+       'condition': UserSelect('Condition',['f1k50ms','f1k100ms','f4k50ms'],
+                               conditions,priority=3),
+       'starting_level': UserNumber('Starting Level',6,priority=4),
+       'num_blocks': UserNumber('Blocks',6,priority=5),
+       'stimulus_label_spacing': 0,
+       'question': Vars('Was {labels[0]} [{responses[0]}] or ' +
+                        '{labels[1]} [{responses[1]}] lower in frequency?')}
 
-stimulus = {'atten_dB': atten, 
-            'ramp_ms': 10, 
-            'SOA_ms': 950,# ??
-            'response_delay_ms': 500,
-            'passive_delay_ms': 767,
-            'example_standard': 'Sound more to the center',
-            'example_signal': 'Sound more to the right',
-            'instructions': 'You will be listening for the sound to your right ear.',
-            'question': 'to the right',
-            'condition_order': ['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB',
-                                'ITD_500Hz0us','ITD_500Hz200us'],
-            'conditions':
-            {'ILD_4k0dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 0,
-                            'type': 'ILD','example_delta': 8},
-             'ILD_4k6dB': {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 6,
-                           'type': 'ILD','example_delta': 8},
-             'ILD_6k0dB': {'length_ms': 300, 'frequency_Hz': 6000,'offset_dB': 0,
-                           'type': 'ILD','example_delta': 8},
-             'ITD_500Hz0us': {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 0,
-                              'type': 'ITD','example_delta': 200},
-			 'ITD_500Hz200us' : {'length_ms': 300, 'frequency_Hz': 500,
-                                  'offset_us': 200, 'type': 'ITD',
-                                  'example_delta': 200}}}
 
 # convert microseconds into phase differences
 def us_to_phase(us,freq):
     return 2*pi * us/10**6 * freq
 
-def generate_sound(env,stimulus,condition,delta):
-    cond = stimulus['conditions'][condition]
 
-    if cond['type'] == 'ILD':
-        delta = delta + cond['offset_dB']
-        left_tone = left(tone(cond['frequency_Hz'],
-                            cond['length_ms'],
-                            stimulus['atten_dB']['left'] + delta/2,
-                            stimulus['ramp_ms'],
-                            env['sample_rate_Hz']))
+def generate_sound(env,delta):
+    if env['condition']['type'] == 'ILD':
+        delta = delta + env['condition']['offset_dB']
+        left_tone = left(tone(env['condition']['frequency_Hz'],
+                              env['condition']['length_ms'],
+                              env['atten_dB']['left'] + delta/2,
+                              env['ramp_ms'],
+                              env['sample_rate_Hz']))
 
-        right_tone = right(tone(cond['frequency_Hz'],
-                            cond['length_ms'],
-                            stimulus['atten_dB']['right'] - delta/2,
-                            stimulus['ramp_ms'],
-                            env['sample_rate_Hz']))
+        right_tone = right(tone(env['condition']['frequency_Hz'],
+                                env['condition']['length_ms'],
+                                env['atten_dB']['right'] - delta/2,
+                                env['ramp_ms'],
+                                env['sample_rate_Hz']))
 
         return (left_tone + right_tone).copy()
 
-    elif cond['type'] == 'ITD':
-        delta = delta + cond['offset_us']
-        left_tone = left(tone(cond['frequency_Hz'],
-                            cond['length_ms'],
-                            stimulus['atten_dB']['left'],
-                            stimulus['ramp_ms'],
-                            env['sample_rate_Hz'],
-                            phase = -us_to_phase(delta,cond['frequency_Hz'])/2))
+    elif env['condition']['type'] == 'ITD':
+        delta = delta + env['condition']['offset_us']
+        phase = -us_to_phase(delta,env['condition']['frequency_Hz'])/2
+        left_tone = left(tone(env['condition']['frequency_Hz'],
+                              env['condition']['length_ms'],
+                              env['atten_dB']['left'],
+                              env['ramp_ms'],
+                              env['sample_rate_Hz'],
+                              phase=phase))
 
-        right_tone = right(tone(cond['frequency_Hz'],
-                            cond['length_ms'],
-                            stimulus['atten_dB']['left'],
-                            stimulus['ramp_ms'],
-                            env['sample_rate_Hz'],
-                            phase = +us_to_phase(delta,cond['frequency_Hz'])/2))
+        phase = +us_to_phase(delta,env['condition']['frequency_Hz'])/2
+        right_tone = right(tone(env['condition']['frequency_Hz'],
+                                env['condition']['length_ms'],
+                                env['atten_dB']['left'],
+                                env['ramp_ms'],
+                                env['sample_rate_Hz'],
+                                phase=phase))
 
         return (left_tone + right_tone).copy()
 
     else:
-        raise RuntimeError('Unknown stimulus type: ' + cond['type'])
-stimulus['generate_sound'] = generate_sound
+        raise RuntimeError('Unknown condition type: ' +
+                           env['condition']['type'])
+env['generate_sound'] = generate_sound
 
-def generate_adapter(env,stimulus,condition):
-    cond = stimulus['conditions'][condition]
-    if cond['type'] == 'ILD':
-        return adapters.Stepper(start=env['fields']['Starting Level'],
-                            bigstep=0.5,littlestep=0.25,
-                            down=3,up=1,min_delta=0)
-    elif cond['type'] == 'ITD':
-        return adapters.Stepper(start=env['fields']['Starting Level'],
-                    bigstep=10**0.2,littlestep=10**0.05,
-                    down=3,up=1,min_delta=1,mult=True)
+
+def generate_adapter(env,condition):
+    if env['condition']['type'] == 'ILD':
+        return adapters.Stepper(start=env['starting_level'],
+                                bigstep=0.5,littlestep=0.25,
+                                down=3,up=1,min_delta=0)
+    elif env['condition']['type'] == 'ITD':
+        return adapters.Stepper(start=env['starting_level'],
+                                bigstep=10**0.2,littlestep=10**0.05,
+                                down=3,up=1,min_delta=1,mult=True)
 
 env['generate_adapter'] = generate_adapter
 
-experiment.start(env,stimulus,phases)
+# only run the expeirment if this file is being called directly
+# from the command line.
+if __name__ == "__main__": experiment.start(env)
