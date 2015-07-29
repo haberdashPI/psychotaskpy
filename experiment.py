@@ -14,8 +14,9 @@ def start(env):
                'conditions': Plural('condition'),
                'debug': False,
                'cache_stimuli': True,
+               'git_commit': util.git_commit_hash(),
                'write_to_file': ['sid','group','phase','condition','booth',
-                                 'block']}
+                                 'git_commit','block']}
 
     global_env = prepare(env,default)
 

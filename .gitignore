@@ -1,3 +1,4 @@
+version
 *.pyc
 .DS_Store
 old/

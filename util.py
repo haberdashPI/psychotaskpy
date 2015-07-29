@@ -18,6 +18,12 @@ def booth():
     except:
         return "none"
 
+def git_commit_hash():
+    try:
+        with open('version') as f:
+            return f.readline().strip()
+    except:
+        return "UNKONWN"
 
 def left(xs):
     xs[:,1] = np.zeros(xs.shape[0])
