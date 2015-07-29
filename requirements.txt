@@ -1,4 +1,4 @@
-expyriment>=0.7.0
+expyriment>=0.8.0
 pygame>=1.9.1
 pyopengl>=3.0.2
 oset>=0.1.3
