@@ -26,10 +26,10 @@ conditions = {'d1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
                                        {'str': 'Longer sound','delta': 25}]},
               'd1k100ms': {'length_ms': 100, 'frequency_Hz': 1000,
                            'examples': [{'str': 'Shorter sound','delta': 0},
-                                       {'str': 'Longer sound','delta': 50}]},
+                                        {'str': 'Longer sound','delta': 50}]},
               'd4k50ms': {'length_ms': 100, 'frequency_Hz': 4000,
                           'examples': [{'str': 'Shorter sound','delta': 0},
-                                      {'str': 'Longer sound','delta': 50}]}}
+                                       {'str': 'Longer sound','delta': 50}]}}
 
 
 env = {'title': 'Duration Discrimination',
@@ -53,7 +53,7 @@ env = {'title': 'Duration Discrimination',
        'num_blocks': UserNumber('Blocks',6,priority=4),
        'question':
        {'str': Vars('Was {labels[0]} [{responses[0]}] or ' +
-                    '{labels[1]} [{responses[1]}] lower in frequency?'),
+                    '{labels[1]} [{responses[1]}] longer?'),
         'alternatives': 2}}
 
 def generate_sound(env,delta):
