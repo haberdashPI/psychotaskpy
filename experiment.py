@@ -16,6 +16,7 @@ def start(env):
                'cache_stimuli': True,
                'write_to_file': ['sid','group','phase','condition','booth',
                                  'block']}
+
     global_env = prepare(env,default)
 
     ex.control.defaults.pause_key = pygame.K_F12
