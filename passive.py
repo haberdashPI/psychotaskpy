@@ -29,7 +29,7 @@ def passive_today(env,is_start,write_line):
 
     # find the approrpiate data file from today
     tfile = nth_file(env['block'],env['data_file_dir'] + '/' + sid + '_' +
-                     time.strftime("%Y_%m_%d_") + '2AFC' +
+                     time.strftime("%Y_%m_%d_") + 'AFC' +
                      "_%02d.dat",wrap_around=True)
 
     print "Running passively from file: " + tfile
@@ -46,29 +46,11 @@ def passive_yesterday(env,is_start,write_line):
 
     # find the approrpiate data file from yesterday
     tfile = nth_file(env['block'],env['data_file_dir'] + '/' + sid + '_' +
-                     yesterday.strftime("%Y_%m_%d_") + '2AFC' +
+                     yesterday.strftime("%Y_%m_%d_") + 'AFC' +
                      "_%02d.dat",wrap_around=True)
 
     print "Running passively from file: " + tfile
     run_track(env,pd.read_csv(tfile),write_line)
-
-
-@phase
-def passive_week(env,is_start,write_line):
-    sid = ('%04d' % env['exp'].subject)
-    if is_start:
-        ex.stimuli.TextLine('Press any key when you are ready.').present()
-        env['exp'].keyboard.wait()
-
-    # find the approrpiate data file from a week ago
-    d = date.today() - timedelta(days=7)
-    tfile = nth_file(env['block'],env['data_file_dir'] + '/' + sid + '_' +
-                     d.strftime("%Y_%m_%d_") + '2AFC' +
-                     "_%02d.dat",wrap_around=True)
-
-    print "Running passively from file: " + tfile
-    run_track(env,pd.read_csv(tfile),write_line)    
-
 
 @phase
 def passive_first(env,is_start,write_line):
@@ -78,16 +60,14 @@ def passive_first(env,is_start,write_line):
         ex.stimuli.TextLine('Press any key when you are ready.').present()
         env['exp'].keyboard.wait()
 
-        print env['data_file_dir'] + '/' + sid + '_*2AFC*.dat'
-        tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*2AFC*.dat')
+        print env['data_file_dir'] + '/' + sid + '_*AFC*.dat'
+        tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*AFC*.dat')
         print tfiles
 
-        # make sure there are actually the right number of blocks
-        assert len(tfiles) == env['num_blocks']
-
-    tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*2AFC*.dat')
-    print "Running passively from track in file: " + tfiles[env['block']]
-    run_track(env,pd.read_csv(tfiles[env['block']]),write_line)
+    tfiles = glob.glob(env['data_file_dir'] + '/' + sid + '_*AFC*.dat')
+    file = tfiles[env['block'] % len(tfiles)]
+    print "Running passively from track in file: " + file
+    run_track(env,pd.read_csv(file),write_line)
 
 
 def run(env,write_line):
