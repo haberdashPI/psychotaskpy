@@ -176,9 +176,11 @@ def run(env,write_line):
 
             delta = a.get_delta()
             a.update(response,correct_response)
-        
+
             result = OrderedDict()
             result['trial'] = trial
+            if a.multi_track_index() is not None:
+                result['track'] = a.multi_track_index()
             result['delta'] = delta
             result['user_response'] = response
             result['correct_response'] = correct_response
@@ -191,17 +193,8 @@ def run(env,write_line):
             write_line(result,result.keys())
 
     if env['report_threshold']:
-        if adapter.mult:
-            t = setup_message(env['condition'] +
-                              ' Threshold: %2.3f, SD(log): %2.1f%%\n'
-                              '(Hit any key to continue)' %
-                              (adapter.estimate(),adapter.estimate_sd()),True)
-            t.present()
-        else:
-            t = setup_message(env['condition']+
-                              ' Threshold: %2.3f, SD: %2.1f\n'
-                              '(Hit any key to continue)' %
-                              (adapter.estimate(),adapter.estimate_sd()),True)
-            t.present()
+        t = setup_message(env['condition'] + ' ' + adapter.report_threshold() +
+                          '\n(Hit any key to continue)',True)
+        t.present()
 
         env['exp'].keyboard.wait()
