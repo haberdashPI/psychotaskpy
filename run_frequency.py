@@ -19,8 +19,7 @@ atten = booth_atten[booth()]
 print "Using attenuation of ",atten
 
 
-groups = ['Day1','fs_50ms','F_50ms','F30Ps_50ms','F30Pd_50ms','FD_50ms',
-                  'fs30Pd_50ms','fs24Pd_50ms','fs24D_50ms']
+groups = ['Day1','fs24D_50ms','fs24Pd_50ms','fs24D_50ms','fs7dPd_50ms']
 
 conditions = {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
                           'examples': [{'str': 'Higher frequency sound',
@@ -42,8 +41,7 @@ env = {'title': 'Frequency Discrimination',
        'sample_rate_Hz': 44100,
        'atten_dB': atten,
        'data_file_dir': '../data',
-       'num_trials': 60,
-       'debug': True,
+       'num_trials': UserSelect('Trials',[60,45],priority=5),
        'feedback_delay_ms': 400,
        'beep_ms': 15,
        'ramp_ms': 5,
