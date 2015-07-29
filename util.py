@@ -99,6 +99,10 @@ def lowpass_noise(high_Hz,length_ms,ramp_ms,atten_dB,
 
     return np.vstack([notch, notch]).T
 
+class NthFileError(Exception):
+    def __init__(self,i,pattern):
+        Exception.__init__(self,("Could not find the Nth file (N=%d) with" +
+                                 " pattern: '") % (i+1) + pattern + "'")
 
 def unique_file(filename_pattern):
     index = 0
@@ -126,8 +130,7 @@ def nth_file(i,filename_pattern,give_up_after=10,wrap_around=False):
     else:
         if wrap_around and i > 0:
             return nth_file(i % (count+1),filename_pattern,give_up_after)
-        raise RuntimeError(("Could not find the Nth file (N=%d) with pattern: '" % (i+1) +
-                           filename_pattern + "'"))
+        raise NthFileError(i,filename_pattern)
 
 class RandomSeed():
     def __init__(self,seed):
