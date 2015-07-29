@@ -1,20 +1,23 @@
+from itertools import repeat
 import scipy
 import scipy.stats
 import numpy as np
 from random import randint
 from math import *
 
-
 class BaseAdapter(object):
+    def baseline_delta(self):
+        return 0
+
     def next_trial(self,n):
         if n == 2:
             if randint(0,1) == 0:
-                return [self.delta,0],0
+                return [self.delta,self.baseline_delta()],0
             else:
-                return [0,self.delta],1
+                return [self.baseline_delta(),self.delta],1
         if n == 1:
             if randint(0,1) == 0:
-                return [0],0
+                return [self.baseline_delta()],0
             else:
                 return [self.delta],1
 
@@ -28,19 +31,12 @@ class BaseAdapter(object):
         xs = self.next_trial(n)
         return xs[0],[xs[1]]
 
-class ConstantStimuliAdapter(BaseAdapter):
-    def __init__(self,delta_seq):
-        self.deltas = delta_seq
-        self.index = 0
-        self.update()
+    def multi_track_index(self):
+        return None
 
-    def update(self,given=None,correct=None):
-        if self.index < len(self.deltas):
-            self.delta = self.deltas[self.index]
-        elif self.index > len(self.deltas):
-            raise RuntimeError('Unexpected trial index: '+self.index)
-        self.index = self.index + 1
-
+    def report_threshold(self):
+        return ('Threshold: %2.3f, SD: %2.1f\n' %
+                (self.estimate(),self.estimate_sd()))
 
 class MultiAdapter(BaseAdapter):
     def __init__(self,*adapters):
@@ -56,9 +52,57 @@ class MultiAdapter(BaseAdapter):
         xs = zip(*[a.next_trial(n) for a in self.adapters])
         return zip(*xs[0]), xs[1]
 
+
+class InterleavedAdapter(BaseAdapter):
+    def __init__(self,n_trials,*adapters):
+        self.adapters = adapters
+        selections = np.repeat(np.arange(len(adapters)),n_trials/2)
+        self.selections = list(np.random.choice(selections,replace=False,
+                                                size=n_trials))
+
+    def next_trial(self,n):
+        self.current_adapter = self.selections.pop()
+        stims,response = self.adapters[self.current_adapter].next_trial(n)
+        return zip(repeat(self.current_adapter),stims), response
+
+    def update(self,user_response,correct_response):
+        self.adapters[self.current_adapter].update(user_response,
+                                                   correct_response)
+
+    def get_delta(self):
+        return self.adapters[self.current_adapter].get_delta()
+
+    def multi_track_index(self):
+        return self.current_adapter
+
+    def report_threshold(self):
+        return '\n'.join([('Track %d: ' % i) + a.report_threshold()
+                          for i,a in enumerate(self.adapters)])
+
+    def estimate(self):
+        return self.adapters[self.current_adapter].estimate()
+    def estimate_sd(self):
+        return self.adapters[self.current_adapter].estimate_sd()
+
+################################################################################
+# classic method of constant stimuli
+
+
+class ConstantStimuliAdapter(BaseAdapter):
+    def __init__(self,delta_seq):
+        self.deltas = delta_seq
+        self.index = 0
+        self.update()
+
+    def update(self,given=None,correct=None):
+        if self.index < len(self.deltas):
+            self.delta = self.deltas[self.index]
+        elif self.index > len(self.deltas):
+            raise RuntimeError('Unexpected trial index: '+self.index)
+        self.index = self.index + 1
+
 ################################################################################
 # Stepping adapter: classic adaptive threshold estimation ala Levitt 1971
-
 
 class Stepper(BaseAdapter):
     def __init__(self,start,bigstep,littlestep,down,up,big_reverse=3,
@@ -160,11 +204,7 @@ class Stepper(BaseAdapter):
 
 ################################################################################
 # Bayesian estimation of slopes, as per Kontsevich & Tyler 1999
-
-
-def _log_sum(xs):
-    min_x = np.min(xs)
-    return np.log(np.sum(np.exp(xs - min_x))) + min_x
+# This is a slightly modified equation, that handles negative deltas
 
 
 def _prob_response(correct,x,table):
@@ -194,7 +234,6 @@ def _threshold(table,thresh=0.79):
                                 loc=theta,scale=sigma)
 
 
-
 class KTAdapter(BaseAdapter):
     def __init__(self,start_delta,possible_deltas,log_prior_table):
         self.mult = False
@@ -210,7 +249,7 @@ class KTAdapter(BaseAdapter):
         # update posterior
         p = _prob_response(correct,[self.delta],self.table)
         self.table.lp += np.squeeze(np.log(p))
-        self.table.lp -= _log_sum(self.table.lp)
+        self.table.lp -= scipy.misc.logsumexp(self.table.lp)
 
         # select minimum entropy delta
         p_corrects = _prob_response(True,self.possible_deltas,self.table)
@@ -222,9 +261,9 @@ class KTAdapter(BaseAdapter):
         p_incorrects *= np.exp(self.table.lp)[:,np.newaxis]
         p_i_norm = np.sum(p_incorrects,axis=0)
 
-        entropy = -np.sum(p_corrects * \
+        entropy = -np.sum(p_corrects *
                           (np.log(p_corrects) - np.log(p_c_norm)),axis=0) + \
-                  -np.sum(p_incorrects * \
+                  -np.sum(p_incorrects *
                           (np.log(p_incorrects) - np.log(p_i_norm)),axis=0)
 
         self.delta = self.possible_deltas[np.argmin(entropy)]

@@ -1,6 +1,5 @@
 import expyriment as ex
 import re
-import collections
 from multipledispatch import dispatch
 
 
@@ -33,6 +32,7 @@ class UserSelect(UserRequest):
     self.options = options
     self.results = results
     self.priority = priority
+
 
 class If(object):
   def __init__(self,condition_str,on_true,on_false):

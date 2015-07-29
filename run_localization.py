@@ -7,7 +7,7 @@ import experiment
 import AFC
 import passive
 
-phases = ['2AFC','passive_today','passive_yesterday']
+phases = ['AFC','passive_today','passive_yesterday']
 
 booth_atten = {'corner':{'right': 45.3, 'left': 43.6},  # calibrated on 09-15-14
                'left':  {'right': 42.8, 'left': 41.7},  # calibrated on 09-15-14
@@ -22,27 +22,27 @@ groups = ['Day1','fs_50ms','F_50ms','F30Ps_50ms','F30Pd_50ms',
           'FD_50ms','fs30Pd_50ms','fs24Pd_50ms']
 
 conditions = {'ILD_4k0dB':
-              {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 0,
+              {'frequency_Hz': 4000,'offset_dB': 0,
                'type': 'ILD',
                'examples': [{'str': 'Sound more to the center','delta': 0},
                             {'str': 'Sound more to the right','delta': 8}]},
               'ILD_4k6dB':
-              {'length_ms': 300, 'frequency_Hz': 4000,'offset_dB': 6,
+              {'frequency_Hz': 4000,'offset_dB': 6,
                'type': 'ILD',
                'examples': [{'str': 'Sound more to the center','delta': 0},
                             {'str': 'Sound more to the right','delta': 8}]},
               'ILD_6k0dB':
-              {'length_ms': 300, 'frequency_Hz': 6000,'offset_dB': 0,
+              {'frequency_Hz': 6000,'offset_dB': 0,
                'type': 'ILD',
                'examples': [{'str': 'Sound more to the center','delta': 0},
                             {'str': 'Sound more to the right','delta': 8}]},
               'ITD_500Hz0us':
-              {'length_ms': 300, 'frequency_Hz': 500, 'offset_us': 0,
+              {'frequency_Hz': 500, 'offset_us': 0,
                'type': 'ITD',
                'examples': [{'str': 'Sound more to the center','delta': 0},
                             {'str': 'Sound more to the right','delta': 200}]},
               'ITD_500Hz200us':
-              {'length_ms': 300, 'frequency_Hz': 500,'offset_us': 200,
+              {'frequency_Hz': 500,'offset_us': 200,
                'type': 'ITD',
                'examples': [{'str': 'Sound more to the center','delta': 0},
                             {'str': 'Sound more to the right','delta': 200}]}}
@@ -51,19 +51,21 @@ conditions = {'ILD_4k0dB':
 env = {'title': 'Frequency Discrimination',
        'sample_rate_Hz': 44100,
        'atten_dB': atten,
+       'debug': True,
        'data_file_dir': '../data',
        'num_trials': 60,
        'feedback_delay_ms': 400,
        'ramp_ms': 10,
        'SOA_ms': 900,
        'response_delay_ms': 500,
-       'passive_delay_ms': 767,  # found from average time between response
        'presentations': 2,
+       'length_ms': 300,
        'instructions': 'You will be listening for the sound to your right ear.',
        'sid': UserNumber('Subject ID',0,priority=0),
        'group': UserSelect('Group',groups,priority=1),
        'phase': UserSelect('Phase',phases,priority=2),
-       'condition': UserSelect('Condition',['f1k50ms','f1k100ms','f4k50ms'],
+       'condition': UserSelect('Condition',['ILD_4k0dB','ILD_4k6dB','ILD_6k0dB',
+                                            'ITD_500Hz0us','ITD_500Hz200us'],
                                conditions,priority=3),
        'starting_level': UserNumber('Starting Level',6,priority=4),
        'num_blocks': UserNumber('Blocks',6,priority=5),

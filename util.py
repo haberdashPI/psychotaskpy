@@ -86,7 +86,7 @@ def notch_noise(low_Hz,high_Hz,length_ms,ramp_ms,atten_dB,
 
 
 def lowpass_noise(high_Hz,length_ms,ramp_ms,atten_dB,
-                sample_rate_Hz,order=5):
+                  sample_rate_Hz,order=5):
     total_len = int(round(sample_rate_Hz * length_ms/1000.0))
     envelope = sound_envelope(length_ms,ramp_ms,sample_rate_Hz)
 
@@ -152,7 +152,7 @@ class LineWriter:
                 names = self.info_order + info_order
                 header = ",".join(names) + "\n"
                 f.write(header)
-                
+
                 self.call_info_order = info_order
 
             assert set(info.keys()) == set(self.call_info_order)

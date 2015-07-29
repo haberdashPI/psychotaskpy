@@ -7,7 +7,7 @@ import experiment
 import AFC
 import passive
 
-phases = ['2AFC','passive_today','passive_yesterday','passive_week']
+phases = ['AFC','passive_today','passive_yesterday','passive_first']
 
 booth_atten = {'corner': 27.6,  # calibrated on 9-15-14
                'left': 9.3,     # calibrated on 05-20-15
@@ -40,10 +40,10 @@ conditions = {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
 
 env = {'title': 'Frequency Discrimination',
        'sample_rate_Hz': 44100,
-       'debug': True,
        'atten_dB': atten,
        'data_file_dir': '../data',
        'num_trials': 60,
+       'debug': True,
        'feedback_delay_ms': 400,
        'beep_ms': 15,
        'ramp_ms': 5,
@@ -59,9 +59,10 @@ env = {'title': 'Frequency Discrimination',
                                conditions,priority=3),
        'num_blocks': UserNumber('Blocks',6,priority=4),
        'question':
-       {'str': Vars('Was {labels[0]} [{responses[0]}] or ' +
+       If('phase == "AFC"',
+          {'str': Vars('Was {labels[0]} [{responses[0]}] or ' +
                     '{labels[1]} [{responses[1]}] lower in frequency?'),
-        'alternatives': 2}}
+           'alternatives': 2})}
 
 def generate_sound(env,delta):
     beep = tone(env['frequency_Hz'] - delta,
