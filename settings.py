@@ -66,7 +66,7 @@ def _stage_user_input(x):
 @dispatch(UserSelect)
 def _stage_user_input(select):
   def fn(select=select):
-    tm = ex.io.TextMenu(select.name,select.options,400)
+    tm = ex.io.TextMenu(select.name,map(str,select.options),400)
     if select.results:
       key = select.options[tm.get(0)]
       x = select.results[key]
