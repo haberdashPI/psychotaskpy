@@ -42,9 +42,27 @@ def passive_yesterday(env,stimulus,condition,block,is_start,write_line):
         ex.stimuli.TextLine('Press any key when you are ready.').present()
         env['exp'].keyboard.wait()
 
-    # find the approrpiate data file from today
+    # find the approrpiate data file from yesterday
     tfile = nth_file(block,env['data_file_dir'] + '/' + sid + '_' +
                         yesterday.strftime("%Y_%m_%d_") + '2AFC' +
+                        "_%02d.dat",wrap_around=True)
+
+    print "Running passively from file: " + tfile
+    run_track(env,stimulus,pd.read_csv(tfile),write_line)
+
+@phase
+def passive_week(env,stimulus,condition,block,is_start,write_line):
+    sid = ('%04d' % env['exp'].subject)
+    yesterday = date.today() - timedelta(1)
+    if is_start:
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
+
+    # find the approrpiate data file from a week ago
+    d = date.today() - timedelta(days=7)
+    
+    tfile = nth_file(block,env['data_file_dir'] + '/' + sid + '_' +
+                        d.strftime("%Y_%m_%d_") + '2AFC' +
                         "_%02d.dat",wrap_around=True)
 
     print "Running passively from file: " + tfile

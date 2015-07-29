@@ -9,7 +9,7 @@ import phase
 import twoAFC
 import passive
 
-phases = ['2AFC','passive_today','passive_yesterday']
+phases = ['2AFC','passive_today','passive_yesterday','passive_week']
 
 booth_atten = {'corner': 27.6, # calibrated on 9-15-14
                'left': 9.3, # calibrated on 05-20-15
@@ -24,7 +24,7 @@ env = {'title': 'Frequency Discrimination',
        'debug': False,
        'sample_rate_Hz': 44100,
        'groups': ['Day1','fs_50ms','F_50ms','F30Ps_50ms','F30Pd_50ms','FD_50ms',
-                  'fs30Pd_50ms','fs24Pd_50ms'],
+                  'fs30Pd_50ms','fs24Pd_50ms','fs24D_50ms'],
        'default_blocks': 6,
        'data_file_dir': '../data',
        'num_trials': 60,
