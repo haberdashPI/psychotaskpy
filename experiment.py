@@ -13,6 +13,7 @@ def start(env):
                'booth': util.booth(),
                'conditions': Plural('condition'),
                'debug': False,
+               'cache_stimuli': True,
                'write_to_file': ['sid','group','phase','condition','booth']}
     global_env = prepare(env,default)
 
