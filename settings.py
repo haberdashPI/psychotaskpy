@@ -35,7 +35,7 @@ class UserSelect(UserRequest):
 
 
 class If(object):
-  def __init__(self,condition_str,on_true,on_false):
+  def __init__(self,condition_str,on_true,on_false=None):
     self.condition_str = condition_str
     self.on_true = on_true
     self.on_false = on_false
@@ -56,7 +56,6 @@ class Plural(object):
 class Reference(object):
   def __init__(self,other_field):
     self.field = other_field
-
 
 
 @dispatch(object)
