@@ -2,7 +2,6 @@ import expyriment as ex
 import re
 from multipledispatch import dispatch
 
-
 class Default(object):
   pass
 
@@ -193,22 +192,54 @@ class VariableResolver(dict):
                            self.resolving & {key})
 
 
+class LazyVarMixin(object):
+  def __init__(self,top,*args):
+      super(LazyVarMixin,self).__init__(*args)
+      self.top = top
+
+  def __getitem__(self,key):
+    result = super(LazyVarMixin,self).__getitem__(key)
+
+    replaced = _replace_vars(result,self.top,set())
+    if replaced is not result:
+      self[key] = replaced
+    return replaced
+
+class LazyVarDict(LazyVarMixin,dict):
+  pass
+
+class LazyVarList(LazyVarMixin,list):
+  pass
+
+  def __iter__(self):
+    to_replace = {}
+    for i,x in enumerate(list.__iter__(self)):
+      replaced = _replace_vars(x,self.top,set())
+      if replaced is not x: to_replace[i] = replaced
+      yield replaced
+
+    for i,x in to_replace.iteritems():
+      self[i] = x
+
 @dispatch(object,dict,set)
 def _replace_vars(x,defined,resolving):
   return x
 
-
 @dispatch(dict,dict,set)
 def _replace_vars(child,top,resolving):
-    for key,value in child.iteritems():
-      child[key] = _replace_vars(value,_merge(child,top),resolving)
-    return child
+  return LazyVarDict(_merge(child,top),child)
 
+@dispatch(LazyVarDict,set)
+def _replace_vars(child,top,resolving):
+  return child
 
 @dispatch(list,dict,set)
-def _replace_vars(xs,defined,resolving):
-  return [_replace_vars(x,defined,resolving) for x in xs]
+def _replace_vars(xs,top,resolving):
+  return LazyVarList(top,xs)
 
+@dispatch(LazyVarList,dict,set)
+def _replace_vars(xs,top,resolving):
+  return xs
 
 @dispatch(Vars,dict,set)
 def _replace_vars(vars,settings,resolving):

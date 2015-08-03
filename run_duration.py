@@ -52,9 +52,8 @@ env = {'title': 'Duration Discrimination',
                                conditions,priority=3),
        'num_blocks': UserNumber('Blocks',6,priority=4),
        'question':
-        {'str': If('phase == "AFC"',
-                   Vars('Was {labels[0]} [{responses[0]}] or ' +
-                        '{labels[1]} [{responses[1]}] longer?')),
+        {'str': Vars('Was {labels[0]} [{responses[0]}] or ' +
+                     '{labels[1]} [{responses[1]}] longer?'),
          'alternatives': 2}}
 
 def generate_sound(env,delta):

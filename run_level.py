@@ -55,7 +55,7 @@ env = {'title': 'Tone Detection',
        'example_delta': 60,
        'instructions': 'You will be listening for a tone.',
        'presentations': 2,
-       'question': {'str': Vars('Did Time 1 [{responses[0]}] or time 2' +
+       'question': {'str': Vars('Did Time 1 [{responses[0]}] or Time 2' +
                                 ' [{responses[1]}] have a tone?'),
                      'alternatives': 2,
                      'labels': ['Time 1','Time 2']},

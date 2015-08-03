@@ -42,7 +42,7 @@ env = {'title': 'Noise duration Discrimination',
        'debug': True,
        'atten_dB': atten,
        'data_file_dir': '../data',
-       'num_trials': 6,
+       'num_trials': 60,
        'feedback_delay_ms': 400,
        'tone_ms': 20,
        'tone_inside_ms': 250,
@@ -112,15 +112,19 @@ class NoiseLengthAdapter(adapters.KTAdapter):
     return None
 
 
+def skew_normal(x,loc,scale,skew):
+  return (2./scale * scipy.stats.norm.pdf(x,loc,scale) *
+          scipy.stats.norm.pdf(x*skew,loc,scale))
+
 def generate_adapter(env):
   deltas = np.linspace(-env['noise_ms'],env['noise_ms'],200)
   thetas = np.tile(deltas,50)
   sigmas = np.repeat(np.logspace(0,np.log(env['noise_ms'])/np.log(10),50),200)
   params = pd.DataFrame({'theta': thetas,'sigma': sigmas,'miss': 0.08})
-  params['lp'] = (np.log(scipy.stats.norm.pdf(params.theta,loc=0,
-                         scale=env['noise_ms']/2)) +
+  params['lp'] = (np.log(skew_normal(params.theta,loc=0,
+                         scale=env['noise_ms']/2,skew=10)) +
                   np.log(scipy.stats.norm.pdf(params.sigma, loc=0,
-                         scale=env['noise_ms'])))
+                         scale=env['noise_ms']/10)))
 
   if env['has_tone']:
     ad1 = NoiseLengthAdapter(300,deltas,params.copy())
