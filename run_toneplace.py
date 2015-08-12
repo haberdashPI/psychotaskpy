@@ -23,20 +23,24 @@ inside_pitchQa = [insideQ,
                    'feedback': False}]
 inside_pitchQb = list(reversed(inside_pitchQa))
 
+noise_onset_ms = 300
+noise_length_ms = 450
+noise_offset_ms = noise_onset_ms+noise_length_ms
+
 two_tone_examplesA = [{'str': 'Low tone', 'delta': (None,0)},
                       {'str': 'High tone', 'delta': (None,1)},
                       {'str': 'Low tone, outside of noise',
-                       'delta': (0,0)},
+                       'delta': (noise_onset_ms-300,0)},
                       {'str': 'Low tone, inside of noise',
-                       'delta': (250,0)},
+                       'delta': (noise_onset_ms+noise_length_ms/2,0)},
                       {'str': 'Low tone, outside of noise (again).',
-                       'delta': (450,0)},
+                       'delta': (noise_offset_ms+200,0)},
                       {'str': 'High tone, outside of noise',
-                       'delta': (0,1)},
+                       'delta': (noise_onset_ms-300,0)},
                       {'str': 'High tone, inside of noise',
-                       'delta': (250,1)},
+                       'delta': (noise_onset_ms+noise_length_ms/2,0)},
                       {'str': 'High tone, outside of noise (again).',
-                       'delta': (450,1)}]
+                       'delta': (noise_offset_ms+200,0)}]
 
 two_tone_examplesB = copy.deepcopy(two_tone_examplesA)
 for x in two_tone_examplesB: x['delta'] = (x['delta'][1],x['delta'][0])
@@ -57,9 +61,8 @@ conditions = {'tone1': {'tone_frequency_Hz': 1000},
                        'examples': two_tone_examplesB},
                       two_tone_condition)}
 
-noise_onset_ms = 300
 env = {'title': 'Tone Place',
-       'debug': True,
+       'debug': False,
        'sample_rate_Hz': 44100,
        'atten_dB': atten,
        'data_file_dir': '../data',
@@ -76,12 +79,15 @@ env = {'title': 'Tone Place',
        'phase': 'AFC',
        'sid': UserNumber('Subject ID',0,priority=0),
        'group': 'children',
-       'num_blocks': 1,
-       'max_signal_onset_ms': 1400,'SNR_dB': 25,
-       'noise_onset_ms': noise_onset_ms,'noise_length_ms': 450,
+       'num_blocks': 3,
+       'max_signal_onset_ms': 1400,'SNR_dB': 40,
+       'noise_onset_ms': noise_onset_ms,'noise_length_ms': noise_length_ms,
        'noise_low_Hz': 600, 'noise_high_Hz': 1400,
        'tone_positions':
-       np.array([-100,-75,-50,0,100,150,200,250,275,300,325,350]) + noise_onset_ms,
+       np.array([noise_onset_ms-100,noise_onset_ms-75,noise_onset_ms-50,
+                 noise_onset_ms,noise_onset_ms+100,noise_onset_ms+150,
+                 noise_offset_ms-100,noise_offset_ms-50,noise_offset_ms-25,
+                 noise_offset_ms,noise_offset_ms+25,noise_offset_ms+50]),
        'position_repeats': 4,
        'signal_type': 'tone',
        'question_order': 'place_only',
