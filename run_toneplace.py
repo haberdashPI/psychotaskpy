@@ -11,7 +11,7 @@ groups = ['children']
 
 booth_atten = {'corner': 27.6,  # calibrated on 9-15-14
                'left': 9.3,     # calibrated on 05-20-15
-               'middle': 30.7,  # calibrated on 10-14-14
+               'middle': 30.2,  # calibrated on 08-11-15
                'right': 31.1,   # calibrated on 04-15-15
                'none': 16}
 
@@ -65,7 +65,7 @@ conditions = {'tone1': {'tone_frequency_Hz': 1000},
 
 noise_onset_ms = 300
 env = {'title': 'Tone Place',
-       'debug': True,
+       'debug': False,
        'sample_rate_Hz': 44100,
        'atten_dB': atten,
        'data_file_dir': '../data',
@@ -82,8 +82,8 @@ env = {'title': 'Tone Place',
        'phase': 'AFC',
        'sid': UserNumber('Subject ID',0,priority=0),
        'group': 'children',
-       'num_blocks': 1,
-       'max_signal_onset_ms': 1400,'SNR_dB': 25,
+       'num_blocks': 3,
+       'max_signal_onset_ms': 1400,'SNR_dB': 40,
        'noise_onset_ms': noise_onset_ms,'noise_length_ms': 450,
        'noise_low_Hz': 600, 'noise_high_Hz': 1400,
        'tone_positions':
