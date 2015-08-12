@@ -6,6 +6,7 @@ import scipy.stats
 import adapters
 import experiment
 import phase
+import callibrate
 
 # setup the types of phases we want to use
 import AFC
@@ -18,14 +19,9 @@ freqs = ['250','500','1k','2k','4k','8k']
 dBSPL_to_dBHL = {'250': 27, '500': 13.5, '1k': 7.5, '2k': 9,
                  '4k': 12, '8k': 15.5}
 
-atten_20dB = {'left': {'250': 70, '500': 71.3, '1k': 75, '2k': 67.5,
-                       '4k': 66, '8k': 65},
-              'none': {'250': 70, '500': 71.3, '1k': 75, '2k': 67.5,
-                       '4k': 66, '8k': 65}}
-
-
 def calibration_fn(freq,dB_HL):
-    return 20+atten_20dB[booth()][freq] - (dB_HL+dBSPL_to_dBHL[freq])
+    return (20 + calibrate.atten_20dB_by_freq[booth()][freq] -
+            (dB_HL+dBSPL_to_dBHL[freq]))
 
 
 conditions = [{'name': '250', 'tone_Hz': 250},

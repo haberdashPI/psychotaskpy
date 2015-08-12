@@ -2,6 +2,7 @@ from util import *
 from settings import *
 import adapters
 import experiment
+import calibrate
 
 # setup the types of phases we want to use
 import AFC
@@ -9,12 +10,7 @@ import passive
 
 phases = ['AFC','passive_today','passive_yesterday']
 
-booth_atten = {'corner':{'right': 45.3, 'left': 43.6},  # calibrated on 09-15-14
-               'left':  {'right': 42.8, 'left': 41.7},  # calibrated on 09-15-14
-               'middle':{'right': 47.8, 'left': 46.7},  # calibrated on 10-14-14
-               'none':  {'right': 45, 'left': 45}}
-
-atten = booth_atten[booth()]
+atten = calibrate.atten_70dB_for_LR[booth()]
 print "Using attenuation of ",atten
 
 
@@ -80,17 +76,18 @@ def us_to_phase(us,freq):
 
 
 def generate_sound(env,delta):
+    freq_Hz = env['condition']['frequency_Hz']
     if env['condition']['type'] == 'ILD':
         delta = delta + env['condition']['offset_dB']
-        left_tone = left(tone(env['condition']['frequency_Hz'],
+        left_tone = left(tone(freq_Hz,
                               env['condition']['length_ms'],
-                              env['atten_dB']['left'] + delta/2,
+                              env['atten_dB']['left'][freq_Hz] + delta/2,
                               env['ramp_ms'],
                               env['sample_rate_Hz']))
 
-        right_tone = right(tone(env['condition']['frequency_Hz'],
+        right_tone = right(tone(freq_Hz,
                                 env['condition']['length_ms'],
-                                env['atten_dB']['right'] - delta/2,
+                                env['atten_dB']['right'][freq_Hz] - delta/2,
                                 env['ramp_ms'],
                                 env['sample_rate_Hz']))
 
@@ -98,18 +95,18 @@ def generate_sound(env,delta):
 
     elif env['condition']['type'] == 'ITD':
         delta = delta + env['condition']['offset_us']
-        phase = -us_to_phase(delta,env['condition']['frequency_Hz'])/2
-        left_tone = left(tone(env['condition']['frequency_Hz'],
+        phase = -us_to_phase(delta,freq_Hz)/2
+        left_tone = left(tone(freq_Hz,
                               env['condition']['length_ms'],
-                              env['atten_dB']['left'],
+                              env['atten_dB']['left'][freq_Hz],
                               env['ramp_ms'],
                               env['sample_rate_Hz'],
                               phase=phase))
 
-        phase = +us_to_phase(delta,env['condition']['frequency_Hz'])/2
-        right_tone = right(tone(env['condition']['frequency_Hz'],
+        phase = +us_to_phase(delta,freq_Hz)/2
+        right_tone = right(tone(freq_Hz,
                                 env['condition']['length_ms'],
-                                env['atten_dB']['left'],
+                                env['atten_dB']['right'][freq_Hz],
                                 env['ramp_ms'],
                                 env['sample_rate_Hz'],
                                 phase=phase))

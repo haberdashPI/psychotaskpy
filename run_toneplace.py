@@ -4,18 +4,12 @@ from util import *
 from settings import *
 import adapters
 import experiment
+import calibrate
 
 import AFC
 
 groups = ['children']
-
-booth_atten = {'corner': 27.6,  # calibrated on 9-15-14
-               'left': 9.3,     # calibrated on 05-20-15
-               'middle': 30.7,  # calibrated on 10-14-14
-               'right': 31.1,   # calibrated on 04-15-15
-               'none': 16}
-
-atten = booth_atten[booth()]+1  # 85 not 86 dB tone
+atten = calibrate.atten_86dB_for_left[booth()]+1  # 85 not 86 dB tone
 print "Using attenuation of ",atten
 
 insideQ = {'str': Vars('Was the beep inside [{responses[0]}] or' +

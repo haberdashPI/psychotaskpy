@@ -2,21 +2,14 @@ from util import *
 from settings import *
 import adapters
 import experiment
-
+import calibrate
 
 # setup the types of phases we want to use
 import AFC
 import passive
 
 phases = ['AFC','passive_today','passive_static']
-
-booth_atten = {'corner': 27.6,  # calibrated on 9-15-14
-               'left': 9.3,     # calibrated on 05-20-15
-               'middle': 30.7,  # calibrated on 10-14-14
-               'right': 31.1,   # calibrated on 04-15-15
-               'none': 26}
-
-atten = booth_atten[booth()]
+atten = calibrate.atten_86dB_for_left[booth()]
 print "Using attenuation of ",atten
 
 groups = ['FD_50ms','fs24D_50ms']
