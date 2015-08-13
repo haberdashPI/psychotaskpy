@@ -6,7 +6,7 @@ import scipy.stats
 import adapters
 import experiment
 import phase
-import callibrate
+import calibrate
 
 # setup the types of phases we want to use
 import AFC
@@ -15,7 +15,6 @@ phases = ['AFC']
 
 freqs = ['250','500','1k','2k','4k','8k']
 
-# calibrated on 05-20-15
 dBSPL_to_dBHL = {'250': 27, '500': 13.5, '1k': 7.5, '2k': 9,
                  '4k': 12, '8k': 15.5}
 
