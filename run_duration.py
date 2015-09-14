@@ -8,11 +8,11 @@ import calibrate
 import AFC
 import passive
 
-phases = ['AFC','passive_today','passive_static']
+phases = ['AFC','passive_today','passive_static','passive_random']
 atten = calibrate.atten_86dB_for_left[booth()]
 print "Using attenuation of ",atten
 
-groups = ['FD_50ms','fs24D_50ms']
+groups = ['FD_50ms','fs24D_50ms','fs24Pi_50ms']
 
 conditions = {'d1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
                           'examples': [{'str': 'Shorter sound','delta': 0},
@@ -26,6 +26,7 @@ conditions = {'d1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
 
 
 env = {'title': 'Duration Discrimination',
+       'passive_files': np.load('../data/d1k50ms_files.npy'),
        'sample_rate_Hz': 44100,
        'atten_dB': atten,
        'data_file_dir': '../data',

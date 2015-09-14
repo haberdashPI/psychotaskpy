@@ -6,6 +6,7 @@ from phase import phase
 
 import datetime
 import pandas as pd
+import numpy as np
 import time
 import glob
 
@@ -51,6 +52,15 @@ def passive_yesterday(env,is_start,write_line):
 
     print "Running passively from file: " + tfile
     run_track(env,pd.read_csv(tfile),write_line)
+
+@phase
+def passive_random(env,is_start,write_line):
+    if is_start:
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
+
+    choice = np.random.choice(env['passive_files'],size=1)[0]
+    run_track(env,pd.read_csv(env['data_file_dir'] + '/' + choice),write_line)
 
 @phase
 def passive_first(env,is_start,write_line):
