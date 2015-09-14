@@ -13,7 +13,7 @@ atten = calibrate.atten_86dB_for_left[booth()]
 print "Using attenuation of ",atten
 
 
-groups = ['Day1','fs24D_50ms','fs24Pd_50ms','fs24D_50ms','fs7dPd_50ms']
+groups = ['Day1','fs24D_50ms','fs24Pd_50ms','fs24D_50ms','fs7dPd_50ms','fs24Pi_50ms']
 
 conditions = {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
                           'examples': [{'str': 'Higher frequency sound',
