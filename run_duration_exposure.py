@@ -13,7 +13,7 @@ atten = calibrate.atten_86dB_for_left[booth()]
 print "Using attenuation of ",atten
 
 groups = ['Day1','f','fp','f30p','f4hp','f24p','f7Dp']
-exposures = ['matched_notask','static_notask','interval_notask','interval_task']
+exposures = ['matched_notask','static_notask','interval_notask','interval_task','none']
 
 conditions = {'d1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
                           'examples': [{'str': 'Shorter sound','delta': 0},
