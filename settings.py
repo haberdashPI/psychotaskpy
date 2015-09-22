@@ -46,6 +46,10 @@ class Case(object):
     self.cases = cases
 
 
+class Amend(object):
+  def __init__(self,*xs):
+    self.amend = xs
+
 class Plural(object):
   def __init__(self,name,default_item=None):
     self.name = name
@@ -176,6 +180,10 @@ def _merge(default,base):
 @dispatch(Plural,list)
 def _merge(default,base):
   return [_merge(default.item,b) for b in base]
+
+@dispatch(list,Amend)
+def _merge(default,base):
+  return default + list(base.amend)
 
 
 class VariableResolver(dict):

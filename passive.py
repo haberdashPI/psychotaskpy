@@ -36,6 +36,24 @@ def passive_today(env,is_start,write_line):
     print "Running passively from file: " + tfile
     run_track(env,pd.read_csv(tfile),write_line)
 
+@phase
+def passive_zeroed_today(env,is_start,write_line):
+    sid = ('%04d' % env['exp'].subject)
+
+    if is_start:
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
+
+    # find the approrpiate data file from today
+    tfile = nth_file(env['block'],env['data_file_dir'] + '/' + sid + '_' +
+                     time.strftime("%Y_%m_%d_") + 'AFC' +
+                     "_%02d.dat",wrap_around=True)
+
+    # set all deltas to 0
+    track = pd.read_csv(tfile)
+    track.delta = 0
+    print "Running passively from file: " + tfile
+    run_track(env,track,write_line)
 
 @phase
 def passive_yesterday(env,is_start,write_line):
@@ -52,6 +70,25 @@ def passive_yesterday(env,is_start,write_line):
 
     print "Running passively from file: " + tfile
     run_track(env,pd.read_csv(tfile),write_line)
+
+
+@phase
+def passive_zeroed_yesterday(env,is_start,write_line):
+    sid = ('%04d' % env['exp'].subject)
+    yesterday = date.today() - timedelta(1)
+    if is_start:
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
+
+    # find the approrpiate data file from yesterday
+    tfile = nth_file(env['block'],env['data_file_dir'] + '/' + sid + '_' +
+                     yesterday.strftime("%Y_%m_%d_") + 'AFC' +
+                     "_%02d.dat",wrap_around=True)
+
+    track = pd.read_csv(tfile)  
+    track.delta = 0
+    print "Running passively from file: " + tfile
+    run_track(env,track,write_line)
 
 @phase
 def passive_random(env,is_start,write_line):
