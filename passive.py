@@ -157,6 +157,11 @@ def run_track(env,track,write_line):
     delays_ms = delays_ms.apply(lambda x: x.astype('float64') / 1e6)
     delays_ms[0] = delays_ms.median()
 
+    if track.shape[0] < env['num_trials']:
+        raise RuntimeException("Track does not have sufficeint trials")
+    else:
+        track = track.iloc[:env['num_trials'],:]
+
     for track_index,track_row in track.iterrows():
         # provide an oportunity to exit/pause the program
         env['exp'].keyboard.check()
