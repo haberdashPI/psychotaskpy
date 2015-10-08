@@ -3,50 +3,41 @@ from util import *
 from settings import *
 import adapters
 import experiment
+import calibrate
 
-# setup the types of phases we want to use
 import AFC
 
-booth_atten = {'corner': 27.6,  # calibrated on 9-15-14
-               'left': 9.3,     # calibrated on 05-20-15
-               'middle': 30.7,  # calibrated on 10-14-14
-               'right': 31.1,   # calibrated on 04-15-15
-               'none': 16}
-
-# TODO: check that the right kind of sounds play
-# check that alternation works correctly
-# verify that there isn't any alternative cue for the length of sounds
-
-atten = booth_atten[booth()]
+atten = calibrate.atten_86dB_for_left[booth()]
 print "Using attenuation of ",atten
 
 conditions = {'noise_tone':
               {'has_tone': True,
                'instructions': 'You will be listening for the shorter' +
-               ' sound. Ignore the tone.',
+               ' sound. Please ignore the beep as best you can.',
                'examples':
-               [{'str': 'Longer Sound', 'delta': (0,True)},
-                {'str': 'Shoter Sound', 'delta': (300,True)},
-                {'str': 'Longer Sound', 'delta': (0,False)},
-                {'str': 'Shoter Sound', 'delta': (300,False)}]},
+               [{'str': 'Longer Sound', 'delta': (0,0)},
+                {'str': 'Shoter Sound', 'delta': (0,450)},
+                {'str': 'Longer Sound', 'delta': (1,0)},
+                {'str': 'Shoter Sound', 'delta': (1,450)}]},
               'noise_only':
               {'has_tone': False,
                'instructions': 'You will be listening for the shorter' +
                ' sound.',
                'examples':
-               [{'str': 'Shorter Sound', 'delta': 200},
+               [{'str': 'Shorter Sound', 'delta': 450},
                 {'str': 'Longer Sound', 'delta': 0}]}}
 
 env = {'title': 'Noise duration Discrimination',
        'sample_rate_Hz': 44100,
-       'debug': True,
+       'debug': False,
        'atten_dB': atten,
        'data_file_dir': '../data',
        'num_trials': 60,
        'feedback_delay_ms': 400,
        'tone_ms': 20,
-       'tone_inside_ms': 250,
-       'tone_outside_ms': 0,
+       'tone_inside_max_ms': 100,
+       'tone_inside_max_ratio': 0.5,
+       'tone_outside_onset_ms': 0,
        'noise_onset_ms': 100,
        'tone_Hz': 1000,
        'noise_ms': 500,
@@ -72,7 +63,7 @@ env = {'title': 'Noise duration Discrimination',
 
 def generate_sound(env,stimulus):
   if env['has_tone']:
-    delta = stimulus[0]
+    delta = stimulus[1]
   else:
     delta = stimulus
   if delta is None:
@@ -86,13 +77,16 @@ def generate_sound(env,stimulus):
   noise_space = silence(env['noise_onset_ms'],env['sample_rate_Hz'])
 
   if env['has_tone']:
-    tone_in_signal = bool(stimulus[1])
-    is_signal = stimulus[0] is not None
+    tone_in_signal = bool(stimulus[0])
+    is_signal = stimulus[1] is not None
 
     if is_signal == tone_in_signal:
-      tone_onset_ms = env['tone_inside_ms']
+      tone_onset_from_noise_ms = min(env['tone_inside_max_ms'],
+                                     env['tone_inside_max_ratio'] *
+                                     (env['noise_ms'] - delta))
+      tone_onset_ms = tone_onset_from_noise_ms + env['noise_onset_ms']
     else:
-      tone_onset_ms = env['tone_outside_ms']
+      tone_onset_ms = env['tone_outside_onset_ms']
 
     mytone = tone(env['tone_Hz'],env['tone_ms'],env['atten_dB'],
                   env['ramp_ms'],env['sample_rate_Hz'])
@@ -112,26 +106,26 @@ class NoiseLengthAdapter(adapters.KTAdapter):
     return None
 
 
-def skew_normal(x,loc,scale,skew):
-  return (2./scale * scipy.stats.norm.pdf(x,loc,scale) *
-          scipy.stats.norm.pdf(x*skew,loc,scale))
+def skew_cauchy(x,loc,scale,skew):
+  return (2./scale * scipy.stats.cauchy.pdf(x,loc,scale) *
+          scipy.stats.cauchy.cdf(x,loc,scale/skew))
 
 def generate_adapter(env):
   deltas = np.linspace(-env['noise_ms'],env['noise_ms'],200)
   thetas = np.tile(deltas,50)
   sigmas = np.repeat(np.logspace(0,np.log(env['noise_ms'])/np.log(10),50),200)
   params = pd.DataFrame({'theta': thetas,'sigma': sigmas,'miss': 0.08})
-  params['lp'] = (np.log(skew_normal(params.theta,loc=0,
-                         scale=env['noise_ms']/2,skew=10)) +
+  params['lp'] = (np.log(skew_cauchy(params.theta,loc=0,
+                         scale=env['noise_ms']/2,skew=4)) +
                   np.log(scipy.stats.norm.pdf(params.sigma, loc=0,
                          scale=env['noise_ms']/10)))
 
   if env['has_tone']:
-    ad1 = NoiseLengthAdapter(300,deltas,params.copy())
-    ad2 = NoiseLengthAdapter(300,deltas,params.copy())
+    ad1 = NoiseLengthAdapter(450,deltas,params.copy(),repeats=2)
+    ad2 = NoiseLengthAdapter(450,deltas,params.copy(),repeats=2)
     return adapters.InterleavedAdapter(env['num_trials'],ad1,ad2)
   else:
-    return NoiseLengthAdapter(300,deltas,params)
+    return NoiseLengthAdapter(300,deltas,params,repeats=2)
 
 env['generate_adapter'] = generate_adapter
 

@@ -235,11 +235,13 @@ def _threshold(table,thresh=0.79):
 
 
 class KTAdapter(BaseAdapter):
-    def __init__(self,start_delta,possible_deltas,log_prior_table):
+    def __init__(self,start_delta,possible_deltas,log_prior_table,repeats=0):
         self.mult = False
         self.possible_deltas = possible_deltas
         self.table = log_prior_table
         self.delta = start_delta
+        self.last_repeat = 0
+        self.repeats = repeats
         if not (self.table.columns == 'lp').any():
             self.table['lp'] = 0
 
@@ -266,7 +268,11 @@ class KTAdapter(BaseAdapter):
                   -np.sum(p_incorrects *
                           (np.log(p_incorrects) - np.log(p_i_norm)),axis=0)
 
-        self.delta = self.possible_deltas[np.argmin(entropy)]
+        if self.last_repeat == self.repeats:
+            self.last_repeat = 0
+            self.delta = self.possible_deltas[np.argmin(entropy)]
+        else:
+            self.last_repeat += 1
 
     def estimate(self):
         ts = _threshold(self.table)
