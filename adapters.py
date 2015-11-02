@@ -205,6 +205,72 @@ class Stepper(BaseAdapter):
         else:
             return np.std(self.estimates())
 
+
+
+class RefinedStepper(Stepper):
+    def __init__(self,standard,start,bigstep,littlestep,down,up,big_reverse=3,
+                 drop_reversals=3,min_reversals=7,mult=False,
+                 min_delta=float('-inf'),max_delta=float('inf')):
+
+        super(RefinedStepper,self).__init__(start,bigstep,littlestep,down,up,
+                                            big_reverse,drop_reversals,
+                                            min_reversals,mult,min_delta,
+                                            max_delta)
+        self.deltas = []
+        self.responses = []
+        self.standard = standard
+
+    def update(self,user_response,correct_response):
+        self.deltas.append(self.delta)
+        self.responses.append(user_response == correct_response)
+        return super(RefinedStepper,self).update(user_response,correct_response)
+
+    def report_threshold(self):
+        refined = refined_estimate(np.log(self.estimate() / self.standard),
+                                   np.array(self.responses),
+                                   np.log(np.array(self.deltas) /
+                                          self.standard))
+        thresh = np.exp(refined[0])*self.standard
+        sd = refined[1]
+
+        return ('Threshold: %2.3f, SD: %2.1f\n' % (thresh,sd))
+
+psych_curve = blmm.load_model('psych_curve')
+
+def refined_estimate(estimate,responses,log_deltas,
+                     delta_range=np.log([0.0001,0.9]),sigma=1,miss=0.01,
+                     threshold=0.79):
+    raw = pd.DataFrame({'correct': responses, 'log_delta': log_deltas})
+    summary = raw.groupby('log_delta').correct.sum().reset_index()
+    summary['N'] = raw.groupby('log_delta').correct.count().reset_index().correct
+
+    sample_input = {"n": summary.shape[0],
+                    "log_delta": summary.log_delta,
+                    "tmin": delta_range[0],
+                    "tmax": delta_range[1],
+                    "sigma": sigma,
+                    "miss": miss,
+                    "correct": summary.correct.astype('int64'),
+                    "totals": summary.N}
+
+    if np.isnan(estimate):
+        ixs = slice((len(summary.log_delta)/2),(len(summary.log_delta)))
+        estimate = np.mean(summary.log_delta.values[ixs])
+
+    def init_fn():
+        return {"theta": estimate * (1 + np.random.uniform(high=0.01))}
+
+    fit = psych_curve.sampling(data=sample_input,init=init_fn,
+                               iter=2000,n_jobs=1)
+
+    theta = fit['theta']
+    dprime = scipy.stats.norm.ppf((threshold-miss/2)/(1-miss))
+    thresh_off = -np.log(dprime)/sigma
+    thresh = (theta + thresh_off).mean()
+    thresh_sd = (theta + thresh_off).std()
+
+    return thresh,thresh_sd
+
 ################################################################################
 # Bayesian estimation of slopes, as per Kontsevich & Tyler 1999
 # This is a slightly modified equation, that handles negative deltas
