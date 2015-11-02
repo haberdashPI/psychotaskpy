@@ -2,8 +2,11 @@ from itertools import repeat
 import scipy
 import scipy.stats
 import numpy as np
+import pandas as pd
 from random import randint
 from math import *
+from pylab_util import blmm
+
 
 class BaseAdapter(object):
     def baseline_delta(self):
@@ -206,35 +209,7 @@ class Stepper(BaseAdapter):
 # Bayesian estimation of slopes, as per Kontsevich & Tyler 1999
 # This is a slightly modified equation, that handles negative deltas
 
-
-def _prob_response(correct,x,table):
-
-    L = 1
-    try: L = len(x)
-    except: pass
-
-    theta = np.tile(table.theta,(L,1)).T
-    sigma = np.tile(table.sigma,(L,1)).T
-    miss = np.tile(table.miss,(L,1)).T
-
-    N = scipy.stats.norm.cdf(x,loc=theta,scale=sigma)
-    N[np.isnan(N)] = 0.0
-
-    p_correct = miss/2 + (1.0-miss)*N
-    if correct: return p_correct
-    else: return 1-p_correct
-
-
-def _threshold(table,thresh=0.79):
-    theta = table.theta
-    sigma = table.sigma
-    miss = table.miss
-
-    return scipy.stats.norm.ppf((thresh-miss/2)/(1.0-miss/2),
-                                loc=theta,scale=sigma)
-
-
-class KTAdapter(BaseAdapter):
+class KTAdapterAbstract(BaseAdapter):
     def __init__(self,start_delta,possible_deltas,log_prior_table,repeats=0):
         self.mult = False
         self.possible_deltas = possible_deltas
@@ -249,12 +224,12 @@ class KTAdapter(BaseAdapter):
         correct = user_response == correct_response
 
         # update posterior
-        p = _prob_response(correct,[self.delta],self.table)
+        p = self._prob_response(correct,[self.delta],self.table)
         self.table.lp += np.squeeze(np.log(p))
         self.table.lp -= scipy.misc.logsumexp(self.table.lp)
 
         # select minimum entropy delta
-        p_corrects = _prob_response(True,self.possible_deltas,self.table)
+        p_corrects = self._prob_response(True,self.possible_deltas,self.table)
         p_incorrects = 1-p_corrects
 
         p_corrects *= np.exp(self.table.lp)[:,np.newaxis]
@@ -285,3 +260,36 @@ class KTAdapter(BaseAdapter):
         thresh = np.average(ts, weights=ws)
 
         return np.sqrt(np.average((ts-thresh)**2, weights=ws))
+
+
+def ktadapter(start,deltas,thetas,sigmas,prior,miss=0.08,repeats=0):
+    params = pd.DataFrame({'theta': thetas, 'sigma': sigmas,'miss': miss})
+    params['lp'] = prior(params)
+    return KTAdapter(start,deltas,params.copy(),repeats=repeats)
+
+
+class KTAdapter(object):
+    def _prob_response(correct,x,table):
+        L = 1
+        try: L = len(x)
+        except: pass
+
+        theta = np.tile(table.theta,(L,1)).T
+        sigma = np.tile(table.sigma,(L,1)).T
+        miss = np.tile(table.miss,(L,1)).T
+
+        N = scipy.stats.norm.cdf(x,loc=theta,scale=sigma)
+        N[np.isnan(N)] = 0.0
+
+        p_correct = miss/2 + (1.0-miss)*N
+        if correct: return p_correct
+        else: return 1-p_correct
+
+
+    def _threshold(table,thresh=0.79):
+        theta = table.theta
+        sigma = table.sigma
+        miss = table.miss
+
+        return scipy.stats.norm.ppf((thresh-miss/2)/(1.0-miss/2),
+                                    loc=theta,scale=sigma)
