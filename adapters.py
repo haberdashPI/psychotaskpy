@@ -5,8 +5,6 @@ import numpy as np
 import pandas as pd
 from random import randint
 from math import *
-from pylab_util import blmm
-
 
 class BaseAdapter(object):
     def baseline_delta(self):
@@ -230,44 +228,46 @@ class RefinedStepper(Stepper):
                                    np.array(self.responses),
                                    np.log(np.array(self.deltas) /
                                           self.standard))
+
         thresh = np.exp(refined[0])*self.standard
         sd = refined[1]
 
         return ('Threshold: %2.3f, SD: %2.1f\n' % (thresh,sd))
 
-psych_curve = blmm.load_model('psych_curve')
 
+def _phi_approx(x):
+    return 1. / (1. + np.exp(-(0.07056*(x**3) + 1.5976*x)))
+sqrt_2 = np.sqrt(2)
+
+
+def _curve_log_prob(y,totals,miss,log_delta,theta,sigma):
+    diffs = log_delta[np.newaxis,:] - theta[:,np.newaxis]
+    p = (miss/2) + (1-miss)*_phi_approx(np.exp((diffs)*sigma) / sqrt_2)
+    return np.sum(scipy.stats.binom.logpmf(y,totals,p,),axis=1)
+
+def _logwmean(value,log_prob):
+    return np.exp(scipy.misc.logsumexp(np.log(value) + log_prob) -
+                  scipy.misc.logsumexp(log_prob))
+
+# importance sampling estimate of the threshold
 def refined_estimate(estimate,responses,log_deltas,
                      delta_range=np.log([0.0001,0.9]),sigma=1,miss=0.01,
-                     threshold=0.79):
+                     threshold=0.79,resolution=500,sample_sd=4):
     raw = pd.DataFrame({'correct': responses, 'log_delta': log_deltas})
     summary = raw.groupby('log_delta').correct.sum().reset_index()
     summary['N'] = raw.groupby('log_delta').correct.count().reset_index().correct
 
-    sample_input = {"n": summary.shape[0],
-                    "log_delta": summary.log_delta,
-                    "tmin": delta_range[0],
-                    "tmax": delta_range[1],
-                    "sigma": sigma,
-                    "miss": miss,
-                    "correct": summary.correct.astype('int64'),
-                    "totals": summary.N}
+    theta = np.random.normal(estimate,sample_sd,size=resolution)
+    q_lprob = scipy.stats.norm.logcdf(theta,loc=estimate,scale=sample_sd)
+    log_prob = _curve_log_prob(summary.correct.astype('int64'),
+                               summary.N,miss,summary.log_delta,theta,sigma)
+    weights = log_prob - q_lprob
+    weights = np.exp(weights - np.max(weights))
 
-    if np.isnan(estimate):
-        ixs = slice((len(summary.log_delta)/2),(len(summary.log_delta)))
-        estimate = np.mean(summary.log_delta.values[ixs])
-
-    def init_fn():
-        return {"theta": estimate * (1 + np.random.uniform(high=0.01))}
-
-    fit = psych_curve.sampling(data=sample_input,init=init_fn,
-                               iter=2000,n_jobs=1)
-
-    theta = fit['theta']
     dprime = scipy.stats.norm.ppf((threshold-miss/2)/(1-miss))
     thresh_off = -np.log(dprime)/sigma
-    thresh = (theta + thresh_off).mean()
-    thresh_sd = (theta + thresh_off).std()
+    thresh = np.average(theta + thresh_off,weights=weights)
+    thresh_sd = np.average(((theta + thresh_off) - thresh)**2,weights=weights)
 
     return thresh,thresh_sd
 
