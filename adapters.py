@@ -234,6 +234,22 @@ class RefinedStepper(Stepper):
 
         return ('Threshold: %2.3f, SD: %2.1f\n' % (thresh,sd))
 
+# a test case for the functions below
+# responses = [True,  True,  True,  True,  True,  True,  True,  True,  True,
+#         True,  True,  True, False,  True,  True,  True,  True, False,
+#         True,  True,  True,  True, False,  True,  True,  True, False,
+#         True,  True,  True,  True,  True,  True,  True,  True,  True,
+#         True, False,  True,  True,  True,  True,  True,  True,  True]
+# log_deltas = [-2.30258509, -2.30258509, -2.30258509, -2.99573227, -2.99573227,
+#        -2.99573227, -3.68887945, -3.68887945, -3.68887945, -4.38202663,
+#        -4.38202663, -4.38202663, -5.07517382, -4.38202663, -4.38202663,
+#        -4.38202663, -5.07517382, -5.07517382, -4.72860022, -4.72860022,
+#        -4.72860022, -5.07517382, -5.07517382, -4.72860022, -4.72860022,
+#        -4.72860022, -5.07517382, -4.72860022, -4.72860022, -4.72860022,
+#        -5.07517382, -5.07517382, -5.07517382, -5.42174741, -5.42174741,
+#        -5.42174741, -5.768321  , -5.768321  , -5.42174741, -5.42174741,
+#        -5.42174741, -5.768321  , -5.768321  , -5.768321  , -6.11489459]        
+# estimate = -5.1329360802804889
 
 def _phi_approx(x):
     return 1. / (1. + np.exp(-(0.07056*(x**3) + 1.5976*x)))
@@ -253,6 +269,9 @@ def _logwmean(value,log_prob):
 def refined_estimate(estimate,responses,log_deltas,
                      delta_range=np.log([0.0001,0.9]),sigma=1,miss=0.01,
                      threshold=0.79,resolution=500,sample_sd=4):
+    if np.isnan(estimate):
+        estimate = np.mean(log_deltas[len(log_deltas)/2:])
+
     raw = pd.DataFrame({'correct': responses, 'log_delta': log_deltas})
     summary = raw.groupby('log_delta').correct.sum().reset_index()
     summary['N'] = raw.groupby('log_delta').correct.count().reset_index().correct
