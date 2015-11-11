@@ -12,35 +12,36 @@ print "Using attenuation of ",atten
 
 conditions = {'noise_tone':
               {'has_tone': True,
-               'instructions': 'You will be listening for the shorter' +
-               ' sound. Please ignore the beep as best you can.',
+               'instructions': 'You will be asked if the second sound is ' +
+               'longer or shorter than the first. The first sound will '+
+               'always be the same length. Please ignore the beep ' +
+               'as best you can.',
                'examples':
-               [{'str': 'Longer Sound', 'delta': (0,0)},
-                {'str': 'Shoter Sound', 'delta': (0,450)},
-                {'str': 'Longer Sound', 'delta': (1,0)},
-                {'str': 'Shoter Sound', 'delta': (1,450)}]},
+               [{'str': 'Shorter Sound', 'delta': -100},
+                {'str': 'Longer Sound', 'delta': 100}]},
+
               'noise_only':
               {'has_tone': False,
-               'instructions': 'You will be listening for the shorter' +
-               ' sound.',
+               'instructions': 'You will be asked if the second sound is ' +
+               'longer or shorter than the first. The first sound will '+
+               'always be the same length.',
                'examples':
-               [{'str': 'Shorter Sound', 'delta': 450},
-                {'str': 'Longer Sound', 'delta': 0}]}}
+               [{'str': 'Shorter Sound', 'delta': -100},
+                {'str': 'Longer Sound', 'delta': 100}]}}
 
 env = {'title': 'Noise duration Discrimination',
        'sample_rate_Hz': 44100,
        'debug': False,
        'atten_dB': atten,
        'data_file_dir': '../data',
-       'num_trials': 60,
+       'num_trials': 63,
        'feedback_delay_ms': 400,
        'tone_ms': 20,
-       'tone_inside_max_ms': 100,
-       'tone_inside_max_ratio': 0.5,
-       'tone_outside_onset_ms': 0,
+       'report_threshold': False,
        'noise_onset_ms': 100,
        'tone_Hz': 1000,
-       'noise_ms': 500,
+       'tone_onset_from_noise_ms': 50,
+       'noise_ms': 450,
        'noise_low_Hz': 600,
        'noise_high_Hz': 1400,
        'ramp_ms': 10,
@@ -52,47 +53,37 @@ env = {'title': 'Noise duration Discrimination',
        'group': 'noise_length',
        'phase': 'AFC',
        'cache_stimuli': False,
+       'deltas': np.linspace(-100,100,9),
        'condition': UserSelect('Condition',['noise_tone','noise_only'],
                                conditions,priority=1),
        'num_blocks': UserNumber('Blocks',1,priority=2),
        'question':
-       {'str': Vars('Was {labels[0]} [{responses[0]}] or ' +
-                    '{labels[1]} [{responses[1]}] shorter?'),
+       {'str': Vars('Was the second noise shorter [{responses[0]}] or ' +
+                    'longer [{responses[1]}]?'),
         'alternatives': 2, 'feedback': False}}
 
 
 def generate_sound(env,stimulus):
-  if env['has_tone']:
-    delta = stimulus[1]
+  if stimulus is None:
+    delta = 0
   else:
     delta = stimulus
-  if delta is None:
-    delta = 0
 
   noise = notch_noise(env['noise_low_Hz'],env['noise_high_Hz'],
-                      env['noise_ms'] - delta,
+                      env['noise_ms'] + delta,
                       env['ramp_ms'],env['atten_dB'] +
                       env['SNR_dB'],env['sample_rate_Hz'])
 
   noise_space = silence(env['noise_onset_ms'],env['sample_rate_Hz'])
 
-  if env['has_tone']:
-    tone_in_signal = bool(stimulus[0])
-    is_signal = stimulus[1] is not None
+  if env['has_tone'] and stimulus is not None:
+    tone_onset_ms = env['tone_onset_from_noise_ms'] + env['noise_onset_ms']
 
-    if is_signal == tone_in_signal:
-      tone_onset_from_noise_ms = min(env['tone_inside_max_ms'],
-                                     env['tone_inside_max_ratio'] *
-                                     (env['noise_ms'] - delta))
-      tone_onset_ms = tone_onset_from_noise_ms + env['noise_onset_ms']
-    else:
-      tone_onset_ms = env['tone_outside_onset_ms']
-
-    mytone = tone(env['tone_Hz'],env['tone_ms'],env['atten_dB'],
-                  env['ramp_ms'],env['sample_rate_Hz'])
+    atone = tone(env['tone_Hz'],env['tone_ms'],env['atten_dB'],
+                 env['ramp_ms'],env['sample_rate_Hz'])
     space = silence(tone_onset_ms,env['sample_rate_Hz'])
 
-    noise_and_signal = mix(np.vstack([space, mytone]),
+    noise_and_signal = mix(np.vstack([space, atone]),
                            np.vstack([noise_space, noise]))
     return left(noise_and_signal).copy()
   else:
@@ -101,31 +92,21 @@ def generate_sound(env,stimulus):
 env['generate_sound'] = generate_sound
 
 
-class NoiseLengthAdapter(adapters.KTAdapter):
-  def baseline_delta(self):
-    return None
+class NoiseLengthAdapter(adapters.ConstantStimuliAdapter):
+  def next_trial(self,n):
+    assert n == 2
+    if self.delta <= 0:
+      return [None,self.delta],0
+    else:
+      return [None,self.delta],1
 
-
-def skew_cauchy(x,loc,scale,skew):
-  return (2./scale * scipy.stats.cauchy.pdf(x,loc,scale) *
-          scipy.stats.cauchy.cdf(x,loc,scale/skew))
 
 def generate_adapter(env):
-  deltas = np.linspace(-env['noise_ms'],env['noise_ms'],200)
-  thetas = np.tile(deltas,50)
-  sigmas = np.repeat(np.logspace(0,np.log(env['noise_ms'])/np.log(10),50),200)
-  params = pd.DataFrame({'theta': thetas,'sigma': sigmas,'miss': 0.08})
-  params['lp'] = (np.log(skew_cauchy(params.theta,loc=0,
-                         scale=env['noise_ms']/2,skew=4)) +
-                  np.log(scipy.stats.norm.pdf(params.sigma, loc=0,
-                         scale=env['noise_ms']/10)))
+  deltas = np.random.choice(np.repeat(env['deltas'],
+                                      env['num_trials']/len(env['deltas'])),
+                            env['num_trials'])
 
-  if env['has_tone']:
-    ad1 = NoiseLengthAdapter(450,deltas,params.copy(),repeats=2)
-    ad2 = NoiseLengthAdapter(450,deltas,params.copy(),repeats=2)
-    return adapters.InterleavedAdapter(env['num_trials'],ad1,ad2)
-  else:
-    return NoiseLengthAdapter(300,deltas,params,repeats=2)
+  return NoiseLengthAdapter(deltas)
 
 env['generate_adapter'] = generate_adapter
 
