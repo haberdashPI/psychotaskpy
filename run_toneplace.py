@@ -30,17 +30,17 @@ noise_offset_ms = noise_onset_ms+noise_length_ms
 two_tone_examplesA = [{'str': 'Low tone', 'delta': (None,0)},
                       {'str': 'High tone', 'delta': (None,1)},
                       {'str': 'Low tone, outside of noise',
-                       'delta': (noise_onset_ms-300,0)},
+                       'delta': (-300,0)},
                       {'str': 'Low tone, inside of noise',
-                       'delta': (noise_onset_ms+noise_length_ms/2,0)},
+                       'delta': (noise_length_ms/2,0)},
                       {'str': 'Low tone, outside of noise (again).',
-                       'delta': (noise_offset_ms+200,0)},
+                       'delta': (noise_length_ms+200,0)},
                       {'str': 'High tone, outside of noise',
-                       'delta': (noise_onset_ms-300,0)},
+                       'delta': (-300,0)},
                       {'str': 'High tone, inside of noise',
-                       'delta': (noise_onset_ms+noise_length_ms/2,0)},
+                       'delta': (noise_length_ms/2,0)},
                       {'str': 'High tone, outside of noise (again).',
-                       'delta': (noise_offset_ms+200,0)}]
+                       'delta': (noise_length_ms+200,0)}]
 
 two_tone_examplesB = copy.deepcopy(two_tone_examplesA)
 for x in two_tone_examplesB: x['delta'] = (x['delta'][1],x['delta'][0])
@@ -49,17 +49,33 @@ two_tone_condition = {'low_tone_frequency_Hz': 900,
                       'high_tone_frequency_Hz': 1100}
 
 conditions = {'tone1': {'tone_frequency_Hz': 1000},
+
+              'tone_noiselength':
+              {'tone_frequency_Hz': 1000,
+               'noise_length_ms': noise_length_ms,
+               'tone_positions':
+               np.array([noise_onset_ms-100,noise_onset_ms-75,noise_onset_ms-50,
+                         noise_onset_ms,noise_onset_ms+100,noise_onset_ms+150,
+                         noise_offset_ms-100,noise_offset_ms-50,
+                         noise_offset_ms-25,noise_offset_ms,noise_offset_ms+25,
+                         noise_offset_ms+50]),
+               'examples':
+               [{'str': 'Outside (before) noise', 'delta': -300},
+                {'str': 'Inside of noise', 'delta': noise_length_ms/2},
+                {'str': 'Outside (after) noise.',
+                 'delta': 750 + noise_onset_ms}]},
+
               'noise': {'signal_high_Hz': 5000,'signal_type': 'lowpass'},
+
               'tone2a':
               prepare({'question_order': 'place_first',
                        'questions': inside_pitchQa,
-                       'examples': two_tone_examplesA},
-                      two_tone_condition),
+                       'examples': two_tone_examplesA},two_tone_condition),
+
               'tone2b':
               prepare({'question_order': 'place_second',
                        'questions': inside_pitchQb,
-                       'examples': two_tone_examplesB},
-                      two_tone_condition)}
+                       'examples': two_tone_examplesB},two_tone_condition)}
 
 env = {'title': 'Tone Place',
        'debug': False,
@@ -80,9 +96,10 @@ env = {'title': 'Tone Place',
        'sid': UserNumber('Subject ID',0,priority=0),
        'group': 'children',
        'num_blocks': 3,
-       'max_signal_onset_ms': 1400,'SNR_dB': 40,
-       'noise_onset_ms': noise_onset_ms,'noise_length_ms': noise_length_ms,
+       'max_signal_onset_ms': 1400, 'SNR_dB': 40,
        'noise_low_Hz': 600, 'noise_high_Hz': 1400,
+       'noise_onset_ms': noise_onset_ms,
+       'noise_length_ms': noise_length_ms,
        'tone_positions':
        np.array([noise_onset_ms-100,noise_onset_ms-75,noise_onset_ms-50,
                  noise_onset_ms,noise_onset_ms+100,noise_onset_ms+150,
@@ -92,24 +109,21 @@ env = {'title': 'Tone Place',
        'signal_type': 'tone',
        'question_order': 'place_only',
        'questions': [insideQ],
-       'examples':
-       [{'str': 'Outside (before) noise', 'delta': -300 + noise_onset_ms},
-        {'str': 'Inside of noise', 'delta': 200 + noise_onset_ms},
-        {'str': 'Outside (after) noise.','delta': 750 + noise_onset_ms}],
-       'condition': UserSelect('Condition',['tone1','tone2a','tone2b','noise'],
+       'condition': UserSelect('Condition',['tone_noiselength','tone1',
+                                            'tone2a','tone2b','noise'],
                                conditions,priority=1.5)}
 
 
 def generate_sound(env,delta):
     if env['question_order'] == 'place_first':
       high_tone = bool(delta[1])
-      place = delta[0]
+      place = delta[0] + env['noise_onset_ms']
     elif env['question_order'] == 'place_second':
       high_tone = bool(delta[0])
-      place = delta[1]
+      place = delta[1] + env['noise_onset_ms']
     else:
       high_tone = None
-      place = delta
+      place = delta + env['noise_onset_ms']
 
     if env['signal_type'] == 'tone':
       if high_tone is None:
