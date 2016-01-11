@@ -7,9 +7,9 @@ class Default(object):
 
 
 class Vars(object):
-  def __init__(self,var_str):
+  def __init__(self,var_str,eval=False):
     self.var_str = var_str
-
+    self.eval = eval
 
 class UserRequest(object):
   def __init__(self):
@@ -186,6 +186,11 @@ def _merge(default,base):
   return default + list(base.amend)
 
 
+class SettingsException(Exception):
+  def __init__(self,msg):
+    super(SettingsException,self).__init__(msg)
+
+
 class VariableResolver(dict):
   def __init__(self,settings,resolving):
     dict.__init__(self,settings)
@@ -194,7 +199,7 @@ class VariableResolver(dict):
 
   def __getitem__(self,key):
     if key in self.resolving:
-      raise RuntimeError('Detected infinite loop!')
+      raise SettingsException('Detected infinite loop!')
     else:
       return _replace_vars(dict.__getitem__(self,key),self.settings,
                            self.resolving & {key})
@@ -254,12 +259,15 @@ def _replace_vars(vars,settings,resolving):
   braces = r'{([^}]+)}'
   result = vars.var_str
   try:
-    for var in re.finditer(braces,vars.var_str):
-      result = re.sub(braces,eval(var.group(1),globals(),
-                                  VariableResolver(settings,resolving)),
-                      result,1)
-    return result
-  except Exception as e:
+    if vars.eval:
+      return eval(result,globals(),VariableResolver(settings,resolving))
+    else:
+      for var in re.finditer(braces,vars.var_str):
+        result = re.sub(braces,eval(var.group(1),globals(),
+                                    VariableResolver(settings,resolving)),
+                        result,1)
+      return result
+  except SettingsException as e:
     raise RuntimeError('Exception thrown while resolving "%s":\n%s' %
                        (vars.var_str,e))
 
