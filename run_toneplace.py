@@ -12,36 +12,40 @@ groups = ['children']
 atten = calibrate.atten_86dB_for_left[booth()]+1  # 85 not 86 dB tone
 print "Using attenuation of ",atten
 
-insideQ = {'str': Vars('Was the beep inside [{responses[0]}] or' +
-                       ' outside [{responses[1]}] of the noise?'),
-           'alternatives': 2,
-           'feedback': False}
-inside_pitchQa = [insideQ,
+question = {'str': Vars('Was the beep inside [{responses[0]}] or' +
+                        ' outside [{responses[1]}] of the noise?'),
+            'alternatives': 2,
+            'feedback': False}
+examples = [{'str': 'Outside (before) noise',
+             'delta': Vars("noise_onset_ms-100",eval=True)},
+            {'str': 'Inside of noise',
+             'delta': Vars("noise_onset_ms+50",eval=True)},
+            {'str': 'Outside (after) noise.',
+             'delta': Vars("noise_offset_ms+50",eval=True)}]
+
+two_questionsA = [question,
                   {'str': Vars('Was the beep low [{responses[0]}] or ' +
                                'high [{responses[1]}]?'),
                    'alternatives': 2,
                    'feedback': False}]
-inside_pitchQb = list(reversed(inside_pitchQa))
-
-noise_onset_ms = 300
-noise_length_ms = 450
-noise_offset_ms = noise_onset_ms+noise_length_ms
+two_questionsB = list(reversed(two_questionsA))
 
 two_tone_examplesA = [{'str': 'Low tone', 'delta': (None,0)},
                       {'str': 'High tone', 'delta': (None,1)},
                       {'str': 'Low tone, outside of noise',
-                       'delta': (-300,0)},
+                       'delta': [Vars('noise_onset_ms-100',eval=True),0]},
                       {'str': 'Low tone, inside of noise',
-                       'delta': (noise_length_ms/2,0)},
+                       'delta': [Vars('noise_onset_ms+50',eval=True),0]},
                       {'str': 'Low tone, outside of noise (again).',
-                       'delta': (noise_length_ms+200,0)},
+                       'delta': [Vars('noise_offset_ms+100',eval=True),0]},
                       {'str': 'High tone, outside of noise',
-                       'delta': (-300,0)},
+                       'delta': [Vars('noise_onset_ms-100',eval=True),1]},
                       {'str': 'High tone, inside of noise',
-                       'delta': (noise_length_ms/2,0)},
+                       'delta': [Vars('noise_onset_ms+100',eval=True),1]},
                       {'str': 'High tone, outside of noise (again).',
-                       'delta': (noise_length_ms+200,0)}]
+                       'delta': [Vars('noise_offset_ms+100',eval=True),1]}]
 
+# reorder exampels for the B ordering
 two_tone_examplesB = copy.deepcopy(two_tone_examplesA)
 for x in two_tone_examplesB: x['delta'] = (x['delta'][1],x['delta'][0])
 
@@ -50,35 +54,22 @@ two_tone_condition = {'low_tone_frequency_Hz': 900,
 
 conditions = {'tone1': {'tone_frequency_Hz': 1000},
 
-              'tone_noiselength':
-              {'tone_frequency_Hz': 1000,
-               'noise_length_ms': noise_length_ms,
-               'tone_positions':
-               np.array([noise_onset_ms-100,noise_onset_ms-75,noise_onset_ms-50,
-                         noise_onset_ms,noise_onset_ms+100,noise_onset_ms+150,
-                         noise_offset_ms-100,noise_offset_ms-50,
-                         noise_offset_ms-25,noise_offset_ms,noise_offset_ms+25,
-                         noise_offset_ms+50]),
-               'examples':
-               [{'str': 'Outside (before) noise', 'delta': -300},
-                {'str': 'Inside of noise', 'delta': noise_length_ms/2},
-                {'str': 'Outside (after) noise.',
-                 'delta': 750 + noise_onset_ms}]},
-
               'noise': {'signal_high_Hz': 5000,'signal_type': 'lowpass'},
 
-              'tone2a':
-              prepare({'question_order': 'place_first',
-                       'questions': inside_pitchQa,
-                       'examples': two_tone_examplesA},two_tone_condition),
+              'tone2a': {'question_order': 'place_first',
+                         'questions': two_questionsA,
+                         'examples': two_tone_examplesA,
+                         'low_tone_frequency_Hz': 900,
+                         'high_tone_frequency_Hz': 1100},
 
-              'tone2b':
-              prepare({'question_order': 'place_second',
-                       'questions': inside_pitchQb,
-                       'examples': two_tone_examplesB},two_tone_condition)}
+              'tone2b': {'question_order': 'place_second',
+                         'questions': two_questionsB,
+                         'examples': two_tone_examplesB,
+                         'low_tone_frequency_Hz': 900,
+                         'high_tone_frequency_Hz': 1100}}
 
 env = {'title': 'Tone Place',
-       'debug': False,
+       'debug': True,
        'sample_rate_Hz': 44100,
        'atten_dB': atten,
        'data_file_dir': '../data',
@@ -96,34 +87,37 @@ env = {'title': 'Tone Place',
        'sid': UserNumber('Subject ID',0,priority=0),
        'group': 'children',
        'num_blocks': 3,
-       'max_signal_onset_ms': 1400, 'SNR_dB': 40,
+       'max_signal_onset_ms': 1400, 'SNR_dB': 17,
        'noise_low_Hz': 600, 'noise_high_Hz': 1400,
-       'noise_onset_ms': noise_onset_ms,
-       'noise_length_ms': noise_length_ms,
-       'tone_positions':
-       np.array([noise_onset_ms-100,noise_onset_ms-75,noise_onset_ms-50,
-                 noise_onset_ms,noise_onset_ms+100,noise_onset_ms+150,
-                 noise_offset_ms-100,noise_offset_ms-50,noise_offset_ms-25,
-                 noise_offset_ms,noise_offset_ms+25,noise_offset_ms+50]),
+       'noise_onset_ms': 300,
+       'noise_length_ms': 450,
+       'noise_offset_ms': Vars('noise_onset_ms+noise_length_ms',eval=True),
+       'tone_positions': Vars("""[noise_onset_ms-100,noise_onset_ms-75,
+                                  noise_onset_ms-50,noise_onset_ms,
+                                  noise_onset_ms+100,noise_onset_ms+150,
+                                  noise_offset_ms-100,noise_offset_ms-50,
+                                  noise_offset_ms-25,noise_offset_ms,
+                                  noise_offset_ms+25,
+                                  noise_offset_ms+50]""",eval=True),
+       'examples': examples,
        'position_repeats': 4,
        'signal_type': 'tone',
        'question_order': 'place_only',
        'questions': [insideQ],
-       'condition': UserSelect('Condition',['tone_noiselength','tone1',
-                                            'tone2a','tone2b','noise'],
+       'condition': UserSelect('Condition',['tone1','tone2a','tone2b','noise'],
                                conditions,priority=1.5)}
 
 
 def generate_sound(env,delta):
     if env['question_order'] == 'place_first':
       high_tone = bool(delta[1])
-      place = delta[0] + env['noise_onset_ms']
+      place = delta[0]
     elif env['question_order'] == 'place_second':
       high_tone = bool(delta[0])
-      place = delta[1] + env['noise_onset_ms']
+      place = delta[1]
     else:
       high_tone = None
-      place = delta + env['noise_onset_ms']
+      place = delta
 
     if env['signal_type'] == 'tone':
       if high_tone is None:
@@ -189,7 +183,7 @@ class TonePlaceAdapter(adapters.ConstantStimuliAdapter):
 class ToneFreqAdapter(adapters.ConstantStimuliAdapter):
   def __init__(self,env):
     tones = np.random.randint(2,size=env['num_trials'])
-    adapters.ConstantStimuliAdapter.__init__(self,tones)
+    super(ToneFreqAdapter,self).__init__(tones)
 
   def next_trial(self,n):
     assert n == 1
