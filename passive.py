@@ -37,6 +37,22 @@ def passive_today(env,is_start,write_line):
     run_track(env,pd.read_csv(tfile),write_line)
 
 @phase
+def passive_shuffled_today(env,is_start,write_line):
+    sid = ('%04d' % env['exp'].subject)
+
+    if is_start:
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
+
+    # find the approrpiate data file from today
+    tfile = nth_file(env['block'],env['data_file_dir'] + '/' + sid + '_' +
+                     time.strftime("%Y_%m_%d_") + 'AFC' +
+                     "_%02d.dat",wrap_around=True)
+
+    print "Running passively from file: " + tfile
+    run_track(env,pd.read_csv(tfile),write_line,shuffle=True)
+
+@phase
 def passive_zeroed_today(env,is_start,write_line):
     sid = ('%04d' % env['exp'].subject)
 
@@ -143,7 +159,16 @@ def run(env,write_line):
         env['exp'].clock.wait(env['feedback_delay_ms'])
 
 
-def run_track(env,track,write_line):
+def run_track(env,track,write_line,shuffle=False):
+    if track.shape[0] < env['num_trials']:
+        raise RuntimeException("Track does not have sufficeint trials")
+    else:
+        track = track.iloc[:env['num_trials'],:]
+    if shuffle:
+        order = np.random.choice(track.shape[0],size=track.shape[0],
+                                 replace=False)
+    else:
+        order = np.arange(track.shape[0])
     env['exp'].screen.clear()
     env['exp'].screen.update()
 
@@ -157,12 +182,8 @@ def run_track(env,track,write_line):
     delays_ms = delays_ms.apply(lambda x: x.astype('float64') / 1e6)
     delays_ms[0] = delays_ms.median()
 
-    if track.shape[0] < env['num_trials']:
-        raise RuntimeException("Track does not have sufficeint trials")
-    else:
-        track = track.iloc[:env['num_trials'],:]
-
-    for track_index,track_row in track.iterrows():
+    for track_index in order:
+        track_row = track.iloc[track_index,:]
         # provide an oportunity to exit/pause the program
         env['exp'].keyboard.check()
         env['exp'].screen.clear()
