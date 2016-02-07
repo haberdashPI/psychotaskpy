@@ -2,6 +2,7 @@ import os
 from math import pi
 import numpy as np
 import scipy.signal
+from git import Repo
 
 MESSAGE_DIMS = (1000,400)
 
@@ -18,12 +19,13 @@ def booth():
     except:
         return "none"
 
+
 def git_commit_hash():
     try:
-        with open('version') as f:
-            return f.readline().strip()
+        repo = Repo('.')
+        return repo.head.commit.hexsha
     except:
-        return "UNKONWN"
+        return "UNKNOWN"
 
 def left(xs):
     xs[:,1] = np.zeros(xs.shape[0])

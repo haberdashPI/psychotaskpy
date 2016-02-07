@@ -8,8 +8,10 @@ import calibrate
 import AFC
 import passive
 
-phases = ['AFC','passive_today','passive_shuffled_today','passive_yesterday',
+phases = ['AFC','passive_today','passive_shuffled_today',
+          'passive_shift_today','passive_yesterday',
           'passive_first']
+
 atten = calibrate.atten_86dB_for_left[booth()]
 print "Using attenuation of ",atten
 
@@ -36,6 +38,7 @@ conditions = {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
 
 env = {'title': 'Frequency Discrimination',
        'sample_rate_Hz': 44100,
+       'passive_shift_transform_fn': lambda delta: delta * 4,
        'debug': True,
        'atten_dB': atten,
        'data_file_dir': '../data',

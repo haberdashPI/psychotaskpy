@@ -53,6 +53,24 @@ def passive_shuffled_today(env,is_start,write_line):
     run_track(env,pd.read_csv(tfile),write_line,shuffle=True)
 
 @phase
+def passive_shift_today(env,is_start,write_line):
+    sid = ('%04d' % env['exp'].subject)
+
+    if is_start:
+        ex.stimuli.TextLine('Press any key when you are ready.').present()
+        env['exp'].keyboard.wait()
+
+    # find the approrpiate data file from today
+    tfile = nth_file(env['block'],env['data_file_dir'] + '/' + sid + '_' +
+                     time.strftime("%Y_%m_%d_") + 'AFC' +
+                     "_%02d.dat",wrap_around=True)
+
+    print "Running passively from file: " + tfile
+    run_track(env,pd.read_csv(tfile),write_line,
+              transform=env['passive_shift_transform_fn'])
+
+
+@phase
 def passive_zeroed_today(env,is_start,write_line):
     sid = ('%04d' % env['exp'].subject)
 
@@ -159,7 +177,7 @@ def run(env,write_line):
         env['exp'].clock.wait(env['feedback_delay_ms'])
 
 
-def run_track(env,track,write_line,shuffle=False):
+def run_track(env,track,write_line,shuffle=False,transform=lambda x: x):
     if track.shape[0] < env['num_trials']:
         raise RuntimeException("Track does not have sufficeint trials")
     else:
@@ -191,12 +209,12 @@ def run_track(env,track,write_line,shuffle=False):
 
         signal_interval = track_row['correct_response']
         if signal_interval == 0:
-            stim_1 = env['sound'](track_row['delta'])
+            stim_1 = env['sound'](transform(track_row['delta']))
             stim_2 = env['sound'](0)
 
         else:
             stim_1 = env['sound'](0)
-            stim_2 = env['sound'](track_row['delta'])
+            stim_2 = env['sound'](transform(track_row['delta']))
 
         stim_1.play()
         env['exp'].clock.wait(env['SOA_ms'])
@@ -209,7 +227,7 @@ def run_track(env,track,write_line,shuffle=False):
 
         env['exp'].clock.wait(delay)
 
-        line_info = {'delta': track_row['delta'],
+        line_info = {'delta': transform(track_row['delta']),
                      'signal_interval': signal_interval,
                      'timestamp': datetime.datetime.now()}
 
