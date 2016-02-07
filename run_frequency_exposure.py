@@ -18,7 +18,7 @@ print "Using attenuation of ",atten
 
 groups = ['Day1','f','fp','f30p','f4hp','f24p','f7Dp']
 exposures = ['shuffled_notask','none','matched_notask','interval_notask',
-             'interval_task']
+             'interval_task','shifted_notask']
 
 conditions = {'f1k50ms': {'length_ms': 50, 'frequency_Hz': 1000,
                           'examples': [{'str': 'Higher frequency sound',

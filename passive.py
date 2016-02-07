@@ -52,6 +52,7 @@ def passive_shuffled_today(env,is_start,write_line):
     print "Running passively from file: " + tfile
     run_track(env,pd.read_csv(tfile),write_line,shuffle=True)
 
+
 @phase
 def passive_shift_today(env,is_start,write_line):
     sid = ('%04d' % env['exp'].subject)
