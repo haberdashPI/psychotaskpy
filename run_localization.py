@@ -47,7 +47,7 @@ conditions = {'ILD_4k0dB':
 env = {'title': 'Frequency Discrimination',
        'sample_rate_Hz': 44100,
        'atten_dB': atten,
-       'debug': True,
+       'debug': False,
        'data_file_dir': '../data',
        'num_trials': 60,
        'feedback_delay_ms': 400,
@@ -64,10 +64,11 @@ env = {'title': 'Frequency Discrimination',
                                             'ITD_500Hz0us','ITD_500Hz200us'],
                                conditions,priority=3),
        'starting_level': UserNumber('Starting Level',6,priority=4),
-       'num_blocks': UserNumber('Blocks',6,priority=5),
+       'num_blocks': UserNumber('Blocks',5,priority=5),
        'stimulus_label_spacing': 0,
-       'question': Vars('Was {labels[0]} [{responses[0]}] or ' +
-                        '{labels[1]} [{responses[1]}] lower in frequency?')}
+       'question': {'str': Vars('Was {labels[0]} [{responses[0]}] or ' +
+                                '{labels[1]} [{responses[1]}] more to the right?'),
+                    'alternatives': 2}}
 
 
 # convert microseconds into phase differences
@@ -76,28 +77,28 @@ def us_to_phase(us,freq):
 
 
 def generate_sound(env,delta):
-    freq_Hz = env['condition']['frequency_Hz']
-    if env['condition']['type'] == 'ILD':
-        delta = delta + env['condition']['offset_dB']
+    freq_Hz = env['frequency_Hz']
+    if env['type'] == 'ILD':
+        delta = delta + env['offset_dB']
         left_tone = left(tone(freq_Hz,
-                              env['condition']['length_ms'],
+                              env['length_ms'],
                               env['atten_dB']['left'][freq_Hz] + delta/2,
                               env['ramp_ms'],
                               env['sample_rate_Hz']))
 
         right_tone = right(tone(freq_Hz,
-                                env['condition']['length_ms'],
+                                env['length_ms'],
                                 env['atten_dB']['right'][freq_Hz] - delta/2,
                                 env['ramp_ms'],
                                 env['sample_rate_Hz']))
 
         return (left_tone + right_tone).copy()
 
-    elif env['condition']['type'] == 'ITD':
-        delta = delta + env['condition']['offset_us']
+    elif env['type'] == 'ITD':
+        delta = delta + env['offset_us']
         phase = -us_to_phase(delta,freq_Hz)/2
         left_tone = left(tone(freq_Hz,
-                              env['condition']['length_ms'],
+                              env['length_ms'],
                               env['atten_dB']['left'][freq_Hz],
                               env['ramp_ms'],
                               env['sample_rate_Hz'],
@@ -105,7 +106,7 @@ def generate_sound(env,delta):
 
         phase = +us_to_phase(delta,freq_Hz)/2
         right_tone = right(tone(freq_Hz,
-                                env['condition']['length_ms'],
+                                env['length_ms'],
                                 env['atten_dB']['right'][freq_Hz],
                                 env['ramp_ms'],
                                 env['sample_rate_Hz'],
@@ -115,16 +116,16 @@ def generate_sound(env,delta):
 
     else:
         raise RuntimeError('Unknown condition type: ' +
-                           env['condition']['type'])
+                           env['type'])
 env['generate_sound'] = generate_sound
 
 
-def generate_adapter(env,condition):
-    if env['condition']['type'] == 'ILD':
+def generate_adapter(env):
+    if env['type'] == 'ILD':
         return adapters.Stepper(start=env['starting_level'],
                                 bigstep=0.5,littlestep=0.25,
                                 down=3,up=1,min_delta=0)
-    elif env['condition']['type'] == 'ITD':
+    elif env['type'] == 'ITD':
         return adapters.Stepper(start=env['starting_level'],
                                 bigstep=10**0.2,littlestep=10**0.05,
                                 down=3,up=1,min_delta=1,mult=True)
