@@ -26,6 +26,7 @@ def defaults(env):
     defaults = {'labels': default_labels,
                 'stimulus_label_spacing': 40,
                 'report_threshold': True,
+                'next_trial_delay_ms': 0,
                 'questions': Plural('question',default_question)}
 
     return defaults
@@ -131,12 +132,6 @@ def collect_response(env,feedback,adapter,question,correct_response):
 
     return response, response_time
 
-def record_response(env,adapter,response,response_time,correct_response,
-                    last_sound_time):
-    
-
-    return result
-
 
 def add_entry(info,name,plural_pattern,values):
     if len(values) > 1:
@@ -181,7 +176,10 @@ def run(env,write_line):
             result['trial'] = trial
             if a.multi_track_index() is not None:
                 result['track'] = a.multi_track_index()
-            result['delta'] = delta
+            if isinstance(delta,tuple):
+                for i in range(len(delta)): result['delta%0d' % i] = delta[i]
+            else:
+                result['delta'] = delta
             result['user_response'] = response
             result['correct_response'] = correct_response
             result['rt'] = rt - last_sound_time
@@ -191,6 +189,9 @@ def run(env,write_line):
             result['timestamp'] = datetime.datetime.now()
             if len(adapters) > 1: result['response_index'] = i
             write_line(result,result.keys())
+
+        # wait for next trial
+        env['exp'].clock.wait(env['next_trial_delay_ms'])
 
     if env['report_threshold']:
         t = setup_message(env['condition'] + ' ' + adapter.report_threshold() +
