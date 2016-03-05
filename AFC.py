@@ -1,3 +1,4 @@
+import collections
 import expyriment as ex
 import datetime
 from itertools import cycle, count
@@ -176,7 +177,7 @@ def run(env,write_line):
             result['trial'] = trial
             if a.multi_track_index() is not None:
                 result['track'] = a.multi_track_index()
-            if isinstance(delta,tuple):
+            if isinstance(delta,collections.Iterable):
                 for i in range(len(delta)): result['delta%0d' % i] = delta[i]
             else:
                 result['delta'] = delta
@@ -191,6 +192,8 @@ def run(env,write_line):
             write_line(result,result.keys())
 
         # wait for next trial
+        env['exp'].screen.clear()
+        env['exp'].screen.update()        
         env['exp'].clock.wait(env['next_trial_delay_ms'])
 
     if env['report_threshold']:

@@ -218,12 +218,12 @@ class LazyVarMixin(object):
       self[key] = replaced
     return replaced
 
+
 class LazyVarDict(LazyVarMixin,dict):
   pass
 
-class LazyVarList(LazyVarMixin,list):
-  pass
 
+class LazyVarList(LazyVarMixin,list):
   def __iter__(self):
     to_replace = {}
     for i,x in enumerate(list.__iter__(self)):
@@ -233,6 +233,9 @@ class LazyVarList(LazyVarMixin,list):
 
     for i,x in to_replace.iteritems():
       self[i] = x
+  def __hash__(self):
+    return tuple(self).__hash__()
+
 
 @dispatch(object,dict,set)
 def _replace_vars(x,defined,resolving):
