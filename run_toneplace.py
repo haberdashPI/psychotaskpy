@@ -23,12 +23,12 @@ examples = [{'str': 'Outside (before) noise',
             {'str': 'Outside (after) noise.',
              'delta': Vars("noise_offset_ms+50",eval=True)}]
 
-two_questionsA = [question,
-                  {'str': Vars('Was the beep low [{responses[0]}] or ' +
-                               'high [{responses[1]}]?'),
-                   'alternatives': 2,
-                   'feedback': False}]
-two_questionsB = list(reversed(two_questionsA))
+#two_questionsA = [question,
+#                  {'str': Vars('Was the beep low [{responses[0]}] or ' +
+#                               'high [{responses[1]}]?'),
+#                   'alternatives': 2,
+#                   'feedback': False}]
+#two_questionsB = list(reversed(two_questionsA))
 
 two_tone_examplesA = [{'str': 'Low tone', 'delta': (None,0)},
                       {'str': 'High tone', 'delta': (None,1)},
@@ -49,21 +49,39 @@ two_tone_examplesA = [{'str': 'Low tone', 'delta': (None,0)},
 two_tone_examplesB = copy.deepcopy(two_tone_examplesA)
 for x in two_tone_examplesB: x['delta'] = [x['delta'][1],x['delta'][0]]
 
-conditions = {'tone1': {'tone_frequency_Hz': 1000},
+condition_order = ['450tone1', '750tone1', '450tone2','450noise']
+conditions = {'450tone1': {'tone_frequency_Hz': 1000, 'noise_length_ms': 450,
+                           'tone_positions': Vars("""[noise_onset_ms-100,noise_onset_ms-50,
+                                                      noise_onset_ms, noise_onset_ms+50,
+                                                      noise_onset_ms+100,noise_onset_ms+150,
+                                                      noise_onset_ms+200, noise_offset_ms-200,
+                                                      noise_offset_ms-150, noise_offset_ms-100,
+                                                      noise_offset_ms-50, noise_offset_ms,
+                                                      noise_offset_ms+25, noise_offset_ms+50]""",eval=True)},
+              '750tone1': {'tone_frequency_Hz': 1000, 'noise_length_ms': 750,
+                           'tone_positions': Vars("""[noise_onset_ms-100,noise_onset_ms-50,
+                                                      noise_onset_ms, noise_onset_ms+75,
+                                                      noise_onset_ms+150,noise_onset_ms+225,
+                                                      noise_onset_ms+300, noise_offset_ms-375,
+                                                      noise_offset_ms-300, noise_offset_ms-225,
+                                                      noise_offset_ms-150, noise_offset_ms-75,
+                                                      noise_offset_ms, noise_offset_ms+25,
+                                                      noise_offset_ms+50]""",eval=True)},
 
-              'noise': {'signal_high_Hz': 5000,'signal_type': 'lowpass'},
+              '450noise': {'signal_high_Hz': 5000,'signal_type': 'lowpass', 'noise_length_ms': 450},
 
-              'tone2a': {'question_order': 'place_first',
-                         'questions': two_questionsA,
-                         'examples': two_tone_examplesA,
+              '450tone2': {'examples': two_tone_examplesA,
                          'low_tone_frequency_Hz': 900,
-                         'high_tone_frequency_Hz': 1100},
-
-              'tone2b': {'question_order': 'place_second',
-                         'questions': two_questionsB,
-                         'examples': two_tone_examplesB,
-                         'low_tone_frequency_Hz': 900,
-                         'high_tone_frequency_Hz': 1100}}
+                         'high_tone_frequency_Hz': 1100, 
+                         'noise_length_ms': 450,
+                         'tone_positions': Vars("""[noise_onset_ms-100,noise_onset_ms-50,
+                                                    noise_onset_ms, noise_onset_ms+50,
+                                                    noise_onset_ms+100,noise_onset_ms+150,
+                                                    noise_onset_ms+200, noise_offset_ms-200,
+                                                    noise_offset_ms-150, noise_offset_ms-100,
+                                                    noise_offset_ms-50, noise_offset_ms,
+                                                    noise_offset_ms+25, noise_offset_ms+50]""",eval=True)}}
+                         
 
 env = {'title': 'Tone Place',
        'debug': False,
@@ -77,6 +95,7 @@ env = {'title': 'Tone Place',
        'SOA_ms': 4000,
        'presentations': 1,
        'response_delay_ms': 500,
+       'next_trial_delay_ms': 2000,
        'report_threshold': False,
        'instructions': 'You will be asked to indicate whether the sound was ' +
                        'inside or outside of the noise.',
@@ -87,21 +106,13 @@ env = {'title': 'Tone Place',
        'max_signal_onset_ms': 1400, 'SNR_dB': 17,
        'noise_low_Hz': 600, 'noise_high_Hz': 1400,
        'noise_onset_ms': 300,
-       'noise_length_ms': 450,
        'noise_offset_ms': Vars('noise_onset_ms+noise_length_ms',eval=True),
-       'tone_positions': Vars("""[noise_onset_ms-100,noise_onset_ms-75,
-                                  noise_onset_ms-50,noise_onset_ms,
-                                  noise_onset_ms+100,noise_onset_ms+150,
-                                  noise_offset_ms-100,noise_offset_ms-50,
-                                  noise_offset_ms-25,noise_offset_ms,
-                                  noise_offset_ms+25,
-                                  noise_offset_ms+50]""",eval=True),
        'examples': examples,
        'position_repeats': 4,
        'signal_type': 'tone',
        'question_order': 'place_only',
        'questions': [question],
-       'condition': UserSelect('Condition',['tone1','tone2a','tone2b','noise'],
+       'condition': UserSelect('Condition',condition_order,
                                conditions,priority=1.5)}
 
 
@@ -111,7 +122,10 @@ def generate_sound(env,delta):
       place = delta[0]
     elif env['question_order'] == 'place_second':
       high_tone = bool(delta[0])
-      place = delta[1]
+      place = delta[1]      
+    elif 'low_tone_frequency_Hz' in env:
+      high_tone = bool(delta[1])
+      place = delta[0]
     else:
       high_tone = None
       place = delta
@@ -185,10 +199,30 @@ class ToneFreqAdapter(adapters.ConstantStimuliAdapter):
   def next_trial(self,n):
     assert n == 1
     return [self.delta],self.delta
+    
+class TonePlaceFreqAdapter(adapters.ConstantStimuliAdapter):
+  def __init__(self,env):
+    places = np.random.choice(np.repeat(env['tone_positions'],
+                                        env['position_repeats']),
+                              size=env['num_trials'],
+                              replace=False)
+    tones = np.random.randint(2,size=env['num_trials'])
 
+    adapters.ConstantStimuliAdapter.__init__(self,zip(places,tones))
+    self.noise_range = (env['noise_onset_ms'],
+                        env['noise_onset_ms'] +
+                        env['noise_length_ms'])
+
+  def next_trial(self,n):
+    assert n == 1
+    outside = int(self.delta[0] < self.noise_range[0] or
+                  self.delta[0] >= self.noise_range[1])
+    return [self.delta],outside
 
 def generate_adapter(env):
   if env['question_order'] == 'place_only':
+    if 'low_tone_frequency_Hz' in env:
+        return TonePlaceFreqAdapter(env)
     return TonePlaceAdapter(env)
   elif env['question_order'] == 'place_first':
     return adapters.MultiAdapter(TonePlaceAdapter(env),
