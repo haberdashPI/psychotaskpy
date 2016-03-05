@@ -47,10 +47,7 @@ two_tone_examplesA = [{'str': 'Low tone', 'delta': (None,0)},
 
 # reorder exampels for the B ordering
 two_tone_examplesB = copy.deepcopy(two_tone_examplesA)
-for x in two_tone_examplesB: x['delta'] = (x['delta'][1],x['delta'][0])
-
-two_tone_condition = {'low_tone_frequency_Hz': 900,
-                      'high_tone_frequency_Hz': 1100}
+for x in two_tone_examplesB: x['delta'] = [x['delta'][1],x['delta'][0]]
 
 conditions = {'tone1': {'tone_frequency_Hz': 1000},
 
@@ -69,7 +66,7 @@ conditions = {'tone1': {'tone_frequency_Hz': 1000},
                          'high_tone_frequency_Hz': 1100}}
 
 env = {'title': 'Tone Place',
-       'debug': True,
+       'debug': False,
        'sample_rate_Hz': 44100,
        'atten_dB': atten,
        'data_file_dir': '../data',
@@ -86,7 +83,7 @@ env = {'title': 'Tone Place',
        'phase': 'AFC',
        'sid': UserNumber('Subject ID',0,priority=0),
        'group': 'children',
-       'num_blocks': 3,
+       'num_blocks': 6,
        'max_signal_onset_ms': 1400, 'SNR_dB': 17,
        'noise_low_Hz': 600, 'noise_high_Hz': 1400,
        'noise_onset_ms': 300,
@@ -103,7 +100,7 @@ env = {'title': 'Tone Place',
        'position_repeats': 4,
        'signal_type': 'tone',
        'question_order': 'place_only',
-       'questions': [insideQ],
+       'questions': [question],
        'condition': UserSelect('Condition',['tone1','tone2a','tone2b','noise'],
                                conditions,priority=1.5)}
 
