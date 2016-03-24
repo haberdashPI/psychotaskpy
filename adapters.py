@@ -335,12 +335,12 @@ class KTAdapterAbstract(BaseAdapter):
             self.last_repeat += 1
 
     def estimate(self):
-        ts = _threshold(self.table)
+        ts = self._threshold(self.table)
         return np.average(ts[~np.isnan(ts)],
                           weights=np.exp(self.table.lp[~np.isnan(ts)]))
 
     def estimate_sd(self):
-        ts = _threshold(self.table)
+        ts = self._threshold(self.table)
         ws = np.exp(self.table.lp)
         thresh = np.average(ts, weights=ws)
 
@@ -353,8 +353,10 @@ def ktadapter(start,deltas,thetas,sigmas,prior,miss=0.08,repeats=0):
     return KTAdapter(start,deltas,params.copy(),repeats=repeats)
 
 
-class KTAdapter(object):
-    def _prob_response(correct,x,table):
+class KTAdapter(KTAdapterAbstract):
+    def __init__(self,*params):
+        KTAdapterAbstract.__init__(self,*params)
+    def _prob_response(self,correct,x,table):
         L = 1
         try: L = len(x)
         except: pass
@@ -371,7 +373,7 @@ class KTAdapter(object):
         else: return 1-p_correct
 
 
-    def _threshold(table,thresh=0.79):
+    def _threshold(self,table,thresh=0.79):
         theta = table.theta
         sigma = table.sigma
         miss = table.miss

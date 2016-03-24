@@ -33,6 +33,7 @@ np.random.shuffle(conditions)
 
 env = {'title': 'Tone Detection',
        'sid': UserNumber('Subject ID',0,priority=0),
+       'debug': True,
        'start_block': 0,
        'phase': 'AFC',
        'sample_rate_Hz': 44100,
@@ -61,6 +62,8 @@ env = {'title': 'Tone Detection',
 
 def generate_sound(env,delta):
     if delta is not None:
+        print "atten: ",calibration_fn(env['condition'], delta)
+      
         beep = tone(env['tone_Hz'],
                     env['beep_ms'],
                     calibration_fn(env['condition'],delta),
@@ -74,6 +77,8 @@ def generate_sound(env,delta):
 env['generate_sound'] = generate_sound
 
 class LevelAdapter(adapters.KTAdapter):
+  def __init__(self,*params):
+      adapters.KTAdapter.__init__(self,*params)
   def baseline_delta(self):
     return None
 
