@@ -88,7 +88,6 @@ class InterleavedAdapter(BaseAdapter):
 ################################################################################
 # classic method of constant stimuli
 
-
 class ConstantStimuliAdapter(BaseAdapter):
     def __init__(self,delta_seq):
         self.deltas = delta_seq
