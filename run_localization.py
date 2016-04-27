@@ -14,8 +14,7 @@ atten = calibrate.atten_70dB_for_LR[booth()]
 print "Using attenuation of ",atten
 
 
-groups = ['Day1','fs_50ms','F_50ms','F30Ps_50ms','F30Pd_50ms',
-          'FD_50ms','fs30Pd_50ms','fs24Pd_50ms']
+groups = ['Day1','L30L','LL']
 
 conditions = {'ILD_4k0dB':
               {'frequency_Hz': 4000,'offset_dB': 0,
