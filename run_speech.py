@@ -30,11 +30,11 @@ np.random.shuffle(examples)
 
 env = {'title': 'Non-native Phoneme Contrast',
        'sample_rate_Hz': 44100,
-       'debug': True,
+       'debug': False,
        'examples': list(examples),
        'atten_dB': atten,
        'data_file_dir': '../data',
-       'num_trials': 15, #UserSelect('Trials',[60,120],priority=5),
+       'num_trials': UserSelect('Trials',[60,120],priority=5),
        'feedback_delay_ms': 400,
        'beep_ms': 15,
        'ramp_ms': 5,
