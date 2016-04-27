@@ -16,7 +16,7 @@ import statsmodels.formula.api as smf
 import AFC
 import passive
 
-atten = calibrate.atten_86dB_for_left[booth()]
+atten = calibrate.atten_86dB_for_left[booth()] + 32 # 54 dB
 print "Using attenuation of ",atten
 
 groups = ["NP_S30S_120","NP_S240"]
