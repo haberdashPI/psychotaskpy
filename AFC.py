@@ -27,6 +27,7 @@ def defaults(env):
     defaults = {'labels': default_labels,
                 'stimulus_label_spacing': 40,
                 'report_threshold': True,
+                'repeat_examples': True,
                 'next_trial_delay_ms': 0,
                 'questions': Plural('question',default_question)}
 
@@ -55,20 +56,26 @@ def examples(env):
         s = example['str']+'\n(Hit any key to continue)'
         example['message'] = setup_message(s,True)
 
-    e = cycle(env['examples'])
+    if(env['repeat_examples']):
+        e = cycle(env['examples'])
+    else:
+        e = iter(env['examples'])
 
     keep_playing = True
     last_sound = None
     clock = env['exp'].clock
-    while keep_playing:
-        example = e.next()
-        example['message'].present()
-        last_sound = env['sound'](example['delta'])
-        last_sound.play()
-        wait_for = clock.time + env['SOA_ms']
+    try:
+        while keep_playing: 
+            example = e.next()
+            example['message'].present()
+            last_sound = env['sound'](example['delta'])
+            last_sound.play()
+            wait_for = clock.time + env['SOA_ms']
 
-        while wait_for > clock.time and keep_playing:   
-            if env['exp'].keyboard.check(): keep_playing = False
+            while wait_for > clock.time and keep_playing:   
+                if env['exp'].keyboard.check(): keep_playing = False
+    except StopIteration:
+        pass
 
     if last_sound:
         last_sound.stop()

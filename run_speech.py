@@ -31,6 +31,7 @@ np.random.shuffle(examples)
 env = {'title': 'Non-native Phoneme Contrast',
        'sample_rate_Hz': 44100,
        'debug': False,
+       'repeat_examples': False,
        'examples': list(examples),
        'atten_dB': atten,
        'data_file_dir': '../data',
