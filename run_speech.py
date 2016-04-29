@@ -111,7 +111,7 @@ def generate_adapter(env):
   if env['word_distribution'] == "trimodal":
     return SpeechAdapter(trimodal(env['num_trials']))
   elif env['word_distribution'] == "uniform":
-    return SpeechAdapter(np.random.choice(15,N=env['num_trials']))
+    return SpeechAdapter(np.random.choice(15,size=env['num_trials']))
   else:
     raise RuntimeError("No word distributed named "+env['word_distribution'])
 
