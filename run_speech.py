@@ -89,14 +89,14 @@ class SpeechAdapter(adapters.ConstantStimuliAdapter):
       self.responses.append(given)
 
   def estimate(self):
-    if self.index < len(self.deltas):
+    if self.index < len(self.deltas)-1:
       return float('NaN')
     else:
       binom = sm.families.Binomial(sm.families.links.probit)
       df = pd.DataFrame({'resp': np.array(self.responses) == 0,
                          'vot': np.array(self.deltas[:len(self.responses)])})
       fit = smf.glm('resp ~ vot',df,family=binom).fit()
-      return 0.5+np.arctan(fit.params['vot'])/np.pi
+      return 0.5-np.arctan(fit.params['vot'])/np.pi
 
   def estimate_sd(self):
     return 0
