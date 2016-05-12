@@ -20,8 +20,16 @@ atten = calibrate.atten_86dB_for_left[booth()] + 32 # 54 dB
 print "Using attenuation of ",atten
 
 groups = ["NP_S30S_120","NP_S240"]
-conditions = {'Train': {'feedback': True, 'word_distribution': 'trimodal'},
-              'Test': {'feedback': False, 'word_distribution': 'uniform'}}
+
+question_str = Vars('Was that Mba[{responses[0]}], ba[{responses[1]}] or ' +
+                    'pa[{responses[2]}]?')
+
+conditions = {'Train': {'feedback': True, 'word_distribution': 'trimodal',
+                        'question': {'str': question_str, 'alternatives': 3,
+                                     'feedback': True}},
+              'Test': {'feedback': False, 'word_distribution': 'uniform',
+                       'question': {'str': question_str, 'alternatives': 3,
+                                    'feedback': False}}}
 
 examples = [[{'str': 'Mba', 'delta': 3}],[{'str': 'ba', 'delta': 8}],
             [{'str': 'pa', 'delta': 13}]]
@@ -30,7 +38,7 @@ np.random.shuffle(examples)
 
 env = {'title': 'Non-native Phoneme Contrast',
        'sample_rate_Hz': 44100,
-       'debug': False,
+       'debug': True,
        'repeat_examples': False,
        'examples': list(examples),
        'atten_dB': atten,
@@ -48,11 +56,7 @@ env = {'title': 'Non-native Phoneme Contrast',
        'group': UserSelect('Group',groups,priority=1),
        'condition': UserSelect('Condition',['Train','Test'],
                                conditions,priority=3),
-       'num_blocks': UserNumber('Blocks',1,priority=4),
-       'question':
-        {'str': Vars('Was that Mba[{responses[0]}], ba[{responses[1]}] or ' +
-                     'pa[{responses[2]}]?'),
-         'alternatives': 3}}
+       'num_blocks': UserNumber('Blocks',1,priority=4)}
 
 
 sounds = []
@@ -111,7 +115,9 @@ def generate_adapter(env):
   if env['word_distribution'] == "trimodal":
     return SpeechAdapter(trimodal(env['num_trials']))
   elif env['word_distribution'] == "uniform":
-    return SpeechAdapter(np.random.choice(15,size=env['num_trials']))
+    deltas = np.repeat(np.arange(15),env['num_trials']/15)
+    return SpeechAdapter(np.random.choice(deltas,env['num_trials'],
+                                          replace=False))
   else:
     raise RuntimeError("No word distributed named "+env['word_distribution'])
 
