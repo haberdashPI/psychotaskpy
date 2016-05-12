@@ -19,7 +19,8 @@ import passive
 atten = calibrate.atten_86dB_for_left[booth()] + 32 # 54 dB
 print "Using attenuation of ",atten
 
-groups = ["NP_S30S_120","NP_S240"]
+
+groups = ["NP_S30S_120","NP_S240","NP_S300","NP_S30S_150"]
 
 question_str = Vars('Was that Mba[{responses[0]}], ba[{responses[1]}] or ' +
                     'pa[{responses[2]}]?')
